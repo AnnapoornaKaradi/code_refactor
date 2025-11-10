@@ -1,0 +1,20 @@
+
+        id                        = "/subscriptions/8f2e2199-66ed-4b86-b236-6148a8425229/resourceGroups/rg-data-uat2-eus2-01/providers/Microsoft.Fabric/capacities/fabsdsuat2eus201"
+      ~ ignore_casing             = false -> true
+        name                      = "fabsdsuat2eus201"
+      ~ output                    = jsonencode({}) -> (known after apply)
+        tags                      = {
+            "environment"            = "UAT2"
+            "fnf_app_id1"            = "272"
+            "fnf_app_name"           = "EXOS"
+            "fnf_businessservice_id" = "272.NONPROD"
+            "fnf_costcenter"         = "07062.205083.300"
+            "fnf_datacenter"         = "Azure"
+            "fnf_lineofbusiness_id"  = "2"
+            "fnf_parenthosting_id"   = "3.3"
+        }
+        # (6 unchanged attributes hidden)
+    }
+
+Plan: 0 to add, 3 to change, 0 to destroy.
+
