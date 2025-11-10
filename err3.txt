@@ -1,0 +1,141 @@
+2025-11-10T14:32:13.6491732Z [31m
+2025-11-10T14:32:13.6493857Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6493993Z 
+2025-11-10T14:32:13.6494312Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6494660Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6494960Z [0m
+2025-11-10T14:32:13.6495197Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6495424Z [0m[0m
+2025-11-10T14:32:13.6501742Z [31m
+2025-11-10T14:32:13.6503537Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6512578Z 
+2025-11-10T14:32:13.6513581Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6514189Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6514606Z [0m
+2025-11-10T14:32:13.6514992Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6515422Z [0m[0m
+2025-11-10T14:32:13.6523582Z [31m
+2025-11-10T14:32:13.6524164Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6525147Z 
+2025-11-10T14:32:13.6526764Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6527485Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6527895Z [0m
+2025-11-10T14:32:13.6528324Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6529406Z [0m[0m
+2025-11-10T14:32:13.6534663Z [31m
+2025-11-10T14:32:13.6536880Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6537201Z 
+2025-11-10T14:32:13.6537782Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6538644Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6539055Z [0m
+2025-11-10T14:32:13.6539540Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6540224Z [0m[0m
+2025-11-10T14:32:13.6549255Z [31m
+2025-11-10T14:32:13.6550766Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6551142Z 
+2025-11-10T14:32:13.6551939Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6553031Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6553328Z [0m
+2025-11-10T14:32:13.6553555Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6553780Z [0m[0m
+2025-11-10T14:32:13.6561713Z [31m
+2025-11-10T14:32:13.6563267Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6563499Z 
+2025-11-10T14:32:13.6566586Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6567440Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6567833Z [0m
+2025-11-10T14:32:13.6571440Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6572366Z [0m[0m
+2025-11-10T14:32:13.6578789Z [31m
+2025-11-10T14:32:13.6581836Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6582089Z 
+2025-11-10T14:32:13.6582663Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6583344Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6583777Z [0m
+2025-11-10T14:32:13.6584166Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6584598Z [0m[0m
+2025-11-10T14:32:13.6588013Z [31m
+2025-11-10T14:32:13.6589219Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6590065Z 
+2025-11-10T14:32:13.6590928Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6592608Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6593391Z [0m
+2025-11-10T14:32:13.6593848Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6594294Z [0m[0m
+2025-11-10T14:32:13.6602005Z [31m
+2025-11-10T14:32:13.6603697Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6603953Z 
+2025-11-10T14:32:13.6604509Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6605193Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6605612Z [0m
+2025-11-10T14:32:13.6605988Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6606417Z [0m[0m
+2025-11-10T14:32:13.6613809Z [31m
+2025-11-10T14:32:13.6614835Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6615221Z 
+2025-11-10T14:32:13.6617089Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6617756Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6618131Z [0m
+2025-11-10T14:32:13.6618489Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6618883Z [0m[0m
+2025-11-10T14:32:13.6627236Z [31m
+2025-11-10T14:32:13.6630691Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6631168Z 
+2025-11-10T14:32:13.6632002Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6633064Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6633463Z [0m
+2025-11-10T14:32:13.6633840Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6634250Z [0m[0m
+2025-11-10T14:32:13.6640454Z [31m
+2025-11-10T14:32:13.6642205Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6642439Z 
+2025-11-10T14:32:13.6642965Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6643707Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6644106Z [0m
+2025-11-10T14:32:13.6644446Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6644688Z [0m[0m
+2025-11-10T14:32:13.6652624Z [31m
+2025-11-10T14:32:13.6654177Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6654358Z 
+2025-11-10T14:32:13.6654866Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6656917Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6657195Z [0m
+2025-11-10T14:32:13.6657402Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6657625Z [0m[0m
+2025-11-10T14:32:13.6664886Z [31m
+2025-11-10T14:32:13.6667352Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6667539Z 
+2025-11-10T14:32:13.6668035Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6668627Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6669026Z [0m
+2025-11-10T14:32:13.6669566Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6670044Z [0m[0m
+2025-11-10T14:32:13.6677482Z [31m
+2025-11-10T14:32:13.6681434Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6681998Z 
+2025-11-10T14:32:13.6682726Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6683439Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6683688Z [0m
+2025-11-10T14:32:13.6683895Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6684118Z [0m[0m
+2025-11-10T14:32:13.6690401Z [31m
+2025-11-10T14:32:13.6690919Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6691079Z 
+2025-11-10T14:32:13.6691870Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6692565Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6693324Z [0m
+2025-11-10T14:32:13.6693688Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6693930Z [0m[0m
+2025-11-10T14:32:13.6702989Z [31m
+2025-11-10T14:32:13.6704042Z [1m[31mError: [0m[0m[1mNot enough function arguments[0m
+2025-11-10T14:32:13.6704300Z 
+2025-11-10T14:32:13.6704893Z [0m  on fabric_capacity.tf line 24, in resource "azapi_resource" "fabric_capacity":
+2025-11-10T14:32:13.6706231Z   24:           for e in each.value.admin_email : lower(trim(e[4m)[0m)
+2025-11-10T14:32:13.6706598Z [0m
+2025-11-10T14:32:13.6706983Z Function "trim" expects 2 argument(s). Missing value for "cutset".
+2025-11-10T14:32:13.6707258Z [0m[0m
+2025-11-10T14:32:13.7309675Z Terraform Plan Exit Code: 1
+2025-11-10T14:32:13.7333514Z 
+2025-11-10T14:32:13.7381678Z ##[error]Script failed with exit code: 1
+2025-11-10T14:32:13.7401133Z [command]/usr/local/bin/az account clear
+2025-11-10T14:32:14.4185872Z ##[section]Finishing: Terraform Plan
