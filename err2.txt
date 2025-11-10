@@ -1,20 +1,102 @@
-
-        id                        = "/subscriptions/8f2e2199-66ed-4b86-b236-6148a8425229/resourceGroups/rg-data-uat2-eus2-01/providers/Microsoft.Fabric/capacities/fabsdsuat2eus201"
-      ~ ignore_casing             = false -> true
-        name                      = "fabsdsuat2eus201"
-      ~ output                    = jsonencode({}) -> (known after apply)
-        tags                      = {
-            "environment"            = "UAT2"
-            "fnf_app_id1"            = "272"
-            "fnf_app_name"           = "EXOS"
-            "fnf_businessservice_id" = "272.NONPROD"
-            "fnf_costcenter"         = "07062.205083.300"
-            "fnf_datacenter"         = "Azure"
-            "fnf_lineofbusiness_id"  = "2"
-            "fnf_parenthosting_id"   = "3.3"
-        }
-        # (6 unchanged attributes hidden)
-    }
-
-Plan: 0 to add, 3 to change, 0 to destroy.
-
+2025-11-10T13:37:02.6781526Z 
+2025-11-10T13:37:02.6784405Z An execution plan has been generated and is shown below.
+2025-11-10T13:37:02.6785010Z Resource actions are indicated with the following symbols:
+2025-11-10T13:37:02.6785813Z   [33m~[0m update in-place
+2025-11-10T13:37:02.6786338Z  [36m<=[0m read (data resources)
+2025-11-10T13:37:02.6786802Z [0m
+2025-11-10T13:37:02.6787203Z Terraform will perform the following actions:
+2025-11-10T13:37:02.6787432Z 
+2025-11-10T13:37:02.6879285Z [1m  # data.azurerm_storage_account_sas.tools[0m will be read during apply
+2025-11-10T13:37:02.6884606Z   # (config refers to values not yet known)[0m[0m
+2025-11-10T13:37:02.6885334Z [0m [36m<=[0m[0m data "azurerm_storage_account_sas" "tools"  {
+2025-11-10T13:37:02.6886175Z       [33m~[0m [0m[1m[0mexpiry[0m[0m            = "2025-11-07T23:29:39Z" [33m->[0m [0m(known after apply)
+2025-11-10T13:37:02.6887160Z       [33m~[0m [0m[1m[0mid[0m[0m                = "c3100b3a1d18fb3638081e7f118d23b6d70785b49738d8bce81dc16fac369660" [33m->[0m [0m(known after apply)
+2025-11-10T13:37:02.6888007Z       [33m~[0m [0m[1m[0msas[0m[0m               = (sensitive value)
+2025-11-10T13:37:02.6888705Z       [31m-[0m [0m[1m[0msigned_version[0m[0m    = "2017-07-29" [90m->[0m [0m[90mnull[0m[0m
+2025-11-10T13:37:02.6891782Z       [33m~[0m [0m[1m[0mstart[0m[0m             = "2025-11-07T22:29:39Z" [33m->[0m [0m(known after apply)
+2025-11-10T13:37:02.6892364Z         [90m# (2 unchanged attributes hidden)[0m[0m
+2025-11-10T13:37:02.6892500Z 
+2025-11-10T13:37:02.6892596Z 
+2025-11-10T13:37:02.6892701Z 
+2025-11-10T13:37:02.6892783Z 
+2025-11-10T13:37:02.6893128Z       [32m+[0m [0mtimeouts {
+2025-11-10T13:37:02.6893509Z           [32m+[0m [0m[1m[0mread[0m[0m = (known after apply)
+2025-11-10T13:37:02.6893768Z         }
+2025-11-10T13:37:02.6894119Z         [90m# (3 unchanged blocks hidden)[0m[0m
+2025-11-10T13:37:02.6894419Z     }
+2025-11-10T13:37:02.6894525Z 
+2025-11-10T13:37:02.6898066Z [1m  # azapi_resource.fabric_capacity["dwh"][0m will be updated in-place[0m[0m
+2025-11-10T13:37:02.6898638Z [0m  [33m~[0m[0m resource "azapi_resource" "fabric_capacity" {
+2025-11-10T13:37:02.6902526Z       [33m~[0m [0m[1m[0mbody[0m[0m                      = jsonencode(
+2025-11-10T13:37:02.6904395Z           [33m~[0m [0m{
+2025-11-10T13:37:02.6904825Z               [33m~[0m [0mproperties = {
+2025-11-10T13:37:02.6905269Z                   [33m~[0m [0madministration = {
+2025-11-10T13:37:02.6915010Z                       [33m~[0m [0mmembers = [
+2025-11-10T13:37:02.6916162Z                           [31m-[0m [0m"milan.goswami@svclnk.com",
+2025-11-10T13:37:02.6916711Z                             "Rajesh.Challa@svclnk.com",
+2025-11-10T13:37:02.6918231Z                           [32m+[0m [0m"Andrew.Nightingale@svclnk.com",
+2025-11-10T13:37:02.6919078Z                           [32m+[0m [0m"Milan.goswami@svclnk.com",
+2025-11-10T13:37:02.6919946Z                             "Halima.Chung@fnf.com",
+2025-11-10T13:37:02.6921281Z                             [90m# (1 unchanged element hidden)[0m[0m
+2025-11-10T13:37:02.6922262Z                             "DBSVS-Reporting@fnf.com",
+2025-11-10T13:37:02.6942999Z                           [31m-[0m [0m"Andrew.Nightingale@svclnk.com",
+2025-11-10T13:37:02.6943624Z                         ]
+2025-11-10T13:37:02.6944550Z                     }
+2025-11-10T13:37:02.6944951Z                 }
+2025-11-10T13:37:02.6945380Z                 [90m# (1 unchanged element hidden)[0m[0m
+2025-11-10T13:37:02.6945689Z             }
+2025-11-10T13:37:02.6945921Z         )
+2025-11-10T13:37:02.6946764Z         [1m[0mid[0m[0m                        = "/subscriptions/8f2e2199-66ed-4b86-b236-6148a8425229/resourceGroups/rg-data-uat2-eus2-01/providers/Microsoft.Fabric/capacities/fabdwhuat2eus201"
+2025-11-10T13:37:02.6947505Z         [1m[0mname[0m[0m                      = "fabdwhuat2eus201"
+2025-11-10T13:37:02.6949006Z       [33m~[0m [0m[1m[0moutput[0m[0m                    = jsonencode({}) [33m->[0m [0m(known after apply)
+2025-11-10T13:37:02.6949776Z         [1m[0mtags[0m[0m                      = {
+2025-11-10T13:37:02.6950149Z             "environment"            = "UAT2"
+2025-11-10T13:37:02.6950523Z             "fnf_app_id1"            = "272"
+2025-11-10T13:37:02.6950851Z             "fnf_app_name"           = "EXOS"
+2025-11-10T13:37:02.6951193Z             "fnf_businessservice_id" = "272.NONPROD"
+2025-11-10T13:37:02.6951563Z             "fnf_costcenter"         = "07062.205083.300"
+2025-11-10T13:37:02.6952689Z             "fnf_datacenter"         = "Azure"
+2025-11-10T13:37:02.6953066Z             "fnf_lineofbusiness_id"  = "2"
+2025-11-10T13:37:02.6953520Z             "fnf_parenthosting_id"   = "3.3"
+2025-11-10T13:37:02.6953839Z         }
+2025-11-10T13:37:02.6954318Z         [90m# (7 unchanged attributes hidden)[0m[0m
+2025-11-10T13:37:02.6954855Z     }
+2025-11-10T13:37:02.6955600Z 
+2025-11-10T13:37:02.6956311Z [1m  # azapi_resource.fabric_capacity["sds"][0m will be updated in-place[0m[0m
+2025-11-10T13:37:02.6956959Z [0m  [33m~[0m[0m resource "azapi_resource" "fabric_capacity" {
+2025-11-10T13:37:02.6957823Z       [33m~[0m [0m[1m[0mbody[0m[0m                      = jsonencode(
+2025-11-10T13:37:02.6958280Z           [33m~[0m [0m{
+2025-11-10T13:37:02.6959051Z               [33m~[0m [0mproperties = {
+2025-11-10T13:37:02.6959745Z                   [33m~[0m [0madministration = {
+2025-11-10T13:37:02.6960228Z                       [33m~[0m [0mmembers = [
+2025-11-10T13:37:02.6960751Z                           [31m-[0m [0m"milan.goswami@svclnk.com",
+2025-11-10T13:37:02.6961159Z                             "Rajesh.Challa@svclnk.com",
+2025-11-10T13:37:02.6961727Z                           [32m+[0m [0m"Andrew.Nightingale@svclnk.com",
+2025-11-10T13:37:02.6964284Z                           [32m+[0m [0m"Milan.goswami@svclnk.com",
+2025-11-10T13:37:02.6964709Z                             "Halima.Chung@fnf.com",
+2025-11-10T13:37:02.6965270Z                             [90m# (1 unchanged element hidden)[0m[0m
+2025-11-10T13:37:02.6967840Z                             "DBSVS-Reporting@fnf.com",
+2025-11-10T13:37:02.6968382Z                           [31m-[0m [0m"Andrew.Nightingale@svclnk.com",
+2025-11-10T13:37:02.6968693Z                         ]
+2025-11-10T13:37:02.6968967Z                     }
+2025-11-10T13:37:02.6969371Z                 }
+2025-11-10T13:37:02.6969964Z                 [90m# (1 unchanged element hidden)[0m[0m
+2025-11-10T13:37:02.6970315Z             }
+2025-11-10T13:37:02.6970601Z         )
+2025-11-10T13:37:02.6972223Z         [1m[0mid[0m[0m                        = "/subscriptions/8f2e2199-66ed-4b86-b236-6148a8425229/resourceGroups/rg-data-uat2-eus2-01/providers/Microsoft.Fabric/capacities/fabsdsuat2eus201"
+2025-11-10T13:37:02.6973221Z         [1m[0mname[0m[0m                      = "fabsdsuat2eus201"
+2025-11-10T13:37:02.6974607Z       [33m~[0m [0m[1m[0moutput[0m[0m                    = jsonencode({}) [33m->[0m [0m(known after apply)
+2025-11-10T13:37:02.6975550Z         [1m[0mtags[0m[0m                      = {
+2025-11-10T13:37:02.6976188Z             "environment"            = "UAT2"
+2025-11-10T13:37:02.6976639Z             "fnf_app_id1"            = "272"
+2025-11-10T13:37:02.6977279Z             "fnf_app_name"           = "EXOS"
+2025-11-10T13:37:02.6980743Z             "fnf_businessservice_id" = "272.NONPROD"
+2025-11-10T13:37:02.6981174Z             "fnf_costcenter"         = "07062.205083.300"
+2025-11-10T13:37:02.6981577Z             "fnf_datacenter"         = "Azure"
+2025-11-10T13:37:02.6982353Z             "fnf_lineofbusiness_id"  = "2"
+2025-11-10T13:37:02.6982967Z             "fnf_parenthosting_id"   = "3.3"
+2025-11-10T13:37:02.6984040Z         }
+2025-11-10T13:37:02.6984992Z         [90m# (7 unchanged attributes hidden)[0m[0m
+2025-11-10T13:37:02.6985578Z     }
+2025-11-10T13:37:02.6985694Z 
+2025-11-10T13:37:02.6986665Z [0m[1mPlan:[0m 0 to add, 2 to change, 0 to destroy.[0m
