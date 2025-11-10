@@ -1,0 +1,2 @@
+Fabric capacity keep showing member name changes every plan - Test the ignore_casing parameter for the azapi_resource to get around this problem
+
