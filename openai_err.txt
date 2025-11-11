@@ -1,0 +1,30 @@
+2025-11-11T16:38:42.4375451Z [0m[1mdata.azurerm_cognitive_account.form_injections["app"]: Read complete after 0s [id=/subscriptions/00d5d0e4-64fb-4d41-b953-241c4d2d8f99/resourceGroups/rg-data-perf-eus2-01/providers/Microsoft.CognitiveServices/accounts/form-app-perf-eus2-01][0m[0m
+2025-11-11T16:38:42.4638905Z [0m[1mdata.azurerm_cognitive_account.injections["app2"]: Read complete after 0s [id=/subscriptions/00d5d0e4-64fb-4d41-b953-241c4d2d8f99/resourceGroups/rg-data-perf-eus2-01/providers/Microsoft.CognitiveServices/accounts/cog-app-perf-eus2-02][0m[0m
+2025-11-11T16:38:42.7074068Z [0m[1mdata.azurerm_cognitive_account.injections["openai"]: Read complete after 1s [id=/subscriptions/00d5d0e4-64fb-4d41-b953-241c4d2d8f99/resourceGroups/rg-data-perf-eus2-01/providers/Microsoft.CognitiveServices/accounts/cog-oai-perf-ncus-04][0m[0m
+2025-11-11T16:38:43.1156997Z [0m[1mazurerm_key_vault.env["adl"]: Modifications complete after 1s [id=/subscriptions/00d5d0e4-64fb-4d41-b953-241c4d2d8f99/resourceGroups/rg-app-perf-eus2-01/providers/Microsoft.KeyVault/vaults/kv-adl-perf-eus2-01][0m[0m
+2025-11-11T16:38:43.1730334Z [0m[1mdata.azurerm_monitor_diagnostic_categories.key_vault_common: Reading... [id=/subscriptions/a2ca26b7-774e-4207-801a-c45151ff310d/resourceGroups/rg-infra-common-eus2-01/providers/Microsoft.KeyVault/vaults/kv-enc-perf-eus2-01][0m[0m
+2025-11-11T16:38:43.1892667Z [0m[1mazurerm_cognitive_deployment.openai_env["openai_sl_valuations"]: Modifying... [id=/subscriptions/00d5d0e4-64fb-4d41-b953-241c4d2d8f99/resourceGroups/rg-data-perf-eus2-01/providers/Microsoft.CognitiveServices/accounts/cog-oai-perf-ncus-04/deployments/openai_sl_valuations][0m[0m
+2025-11-11T16:38:43.2572821Z [0m[1mdata.azurerm_monitor_diagnostic_categories.key_vault_common: Read complete after 0s [id=/subscriptions/a2ca26b7-774e-4207-801a-c45151ff310d/resourceGroups/rg-infra-common-eus2-01/providers/Microsoft.KeyVault/vaults/kv-enc-perf-eus2-01][0m[0m
+2025-11-11T16:38:44.9506749Z [31m
+2025-11-11T16:38:44.9508308Z [1m[31mError: [0m[0m[1mcreating Deployment (Subscription: "00d5d0e4-64fb-4d41-b953-241c4d2d8f99"
+2025-11-11T16:38:44.9508933Z Resource Group Name: "rg-data-perf-eus2-01"
+2025-11-11T16:38:44.9509324Z Account Name: "cog-oai-perf-ncus-04"
+2025-11-11T16:38:44.9513958Z Deployment Name: "openai_sl_valuations"): performing CreateOrUpdate: unexpected status 400 (400 Bad Request) with error: InsufficientQuota: This operation require 50 new capacity in quota Tokens Per Minute (thousands) - 4.1 - DataZoneStandard, which is bigger than the current available capacity 0. The current quota usage is 2000 and the quota limit is 2000 for quota Tokens Per Minute (thousands) - 4.1 - DataZoneStandard.[0m
+2025-11-11T16:38:44.9514904Z 
+2025-11-11T16:38:44.9515583Z [0m  on cognitive.tf line 207, in resource "azurerm_cognitive_deployment" "openai_env":
+2025-11-11T16:38:44.9516156Z  207: resource "azurerm_cognitive_deployment" "openai_env" [4m{[0m
+2025-11-11T16:38:44.9516529Z [0m
+2025-11-11T16:38:44.9516905Z creating Deployment (Subscription: "00d5d0e4-64fb-4d41-b953-241c4d2d8f99"
+2025-11-11T16:38:44.9519587Z Resource Group Name: "rg-data-perf-eus2-01"
+2025-11-11T16:38:44.9520699Z Account Name: "cog-oai-perf-ncus-04"
+2025-11-11T16:38:44.9521117Z Deployment Name: "openai_sl_valuations"): performing CreateOrUpdate:
+2025-11-11T16:38:44.9521625Z unexpected status 400 (400 Bad Request) with error: InsufficientQuota: This
+2025-11-11T16:38:44.9522093Z operation require 50 new capacity in quota Tokens Per Minute (thousands) - 4.1
+2025-11-11T16:38:44.9522799Z - DataZoneStandard, which is bigger than the current available capacity 0. The
+2025-11-11T16:38:44.9523234Z current quota usage is 2000 and the quota limit is 2000 for quota Tokens Per
+2025-11-11T16:38:44.9523757Z Minute (thousands) - 4.1 - DataZoneStandard.
+2025-11-11T16:38:44.9524210Z [0m[0m
+2025-11-11T16:38:45.0036973Z 
+2025-11-11T16:38:45.0087138Z ##[error]Script failed with exit code: 1
+2025-11-11T16:38:45.0111990Z [command]/usr/local/bin/az account clear
+2025-11-11T16:38:45.9972850Z ##[section]Finishing: Terraform Apply
