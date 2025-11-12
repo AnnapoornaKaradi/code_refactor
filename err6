@@ -1,0 +1,56 @@
+kind: Ingress
+metadata:
+  annotations:
+    meta.helm.sh/release-name: phxagg
+    meta.helm.sh/release-namespace: dev-aks-phnxapp
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_clear_headers "Server";
+      more_clear_headers "X-Powered-By";
+      more_set_headers "Strict-Transport-Security: max-age=63072000; includeSubDomains; preload";
+      more_set_headers "Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-ancestors 'none';
+base-uri 'self';";
+  creationTimestamp: "2024-07-30T12:14:54Z"
+  generation: 2
+  labels:
+    app.kubernetes.io/instance: phxagg
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: phoenix-httpaggregator-chart
+    app.kubernetes.io/version: 1.16.0
+    fnf_app: phnx
+    fnf_app_id1: "1721"
+    fnf_app_name: PhoenixApp
+    fnf_businessservice_id: 1721.DEV
+    fnf_costcenter: 00223.902610.300
+    fnf_datacenter: Azure
+    fnf_lineofbusiness_id: "4"
+    fnf_parenthosting_id: "2.1"
+    helm.sh/chart: phoenix-httpaggregator-chart-0.1.0
+  name: phxagg
+  namespace: dev-aks-phnxapp
+  resourceVersion: "406515090"
+  uid: 6eac1242-8409-4b77-b9d6-b6dac4fc794b
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: phoenixapp-api-dev.fnf.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: phxagg
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - phoenixapp-api-dev.fnf.com
+    secretName: phoenixapp-dev.fnf.com
+status:
+  loadBalancer:
+    ingress:
+    - ip: 10.40.5.10
+    - ip: 10.40.5.132
