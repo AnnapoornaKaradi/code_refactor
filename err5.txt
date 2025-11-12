@@ -1,0 +1,3 @@
+##[error]Error: UPGRADE FAILED: failed to replace object: admission webhook "validate.nginx.ingress.kubernetes.io" denied the request: annotation group ConfigurationSnippet contains risky annotation based on ingress configuration
+
+ 
