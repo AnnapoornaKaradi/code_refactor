@@ -1,0 +1,42 @@
+# azapi_resource.fabric_capacity["sds"] will be updated in-place
+  ~ resource "azapi_resource" "fabric_capacity" {
+      ~ body                      = jsonencode(
+          ~ {
+              ~ properties = {
+                  ~ administration = {
+                      ~ members = [
+                          - "milan.goswami@svclnk.com",
+                          - "Rajesh.Challa@svclnk.com",
+                          + "andrew.nightingale@svclnk.com",
+                          + "dbsvs-reporting@fnf.com",
+                            "halima.chung@fnf.com",
+                            "jeffrey.auguste@fnf.com",
+                          - "DBSVS-Reporting@fnf.com",
+                          - "Andrew.Nightingale@svclnk.com",
+                          + "milan.goswami@svclnk.com",
+                          + "rajesh.challa@svclnk.com",
+                        ]
+                    }
+                }
+                # (1 unchanged element hidden)
+            }
+        )
+
+
+body = jsonencode({
+    properties = {
+      administration = {
+        members = sort(distinct([
+          for e in each.value.admin_email : lower(trimspace(e))
+        ]))
+      }
+    }
+    sku = {
+      name = lookup(lookup(each.value.sku,"env_override",{}), local.my_env_short, null) != null ? each.value.sku.env_override[local.my_env_short] : lookup(each.value.sku, "default", null)
+      tier = "Fabric"
+    }
+  })
+
+  ignore_casing = true
+
+
