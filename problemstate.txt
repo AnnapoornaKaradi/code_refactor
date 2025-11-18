@@ -1,0 +1,29 @@
+For TM project we need to implement code merge on Legacy data and EXOS Data. Legacy data will be migrated to EXOS and stored in LegacyDefaultDataDB. In order to access through PBI and SSRS, we need below accounts has access to this data base in lowers and prod
+
+Access: Read - Only
+
+Accounts: 
+
+Prod:
+bi-exos-app-01
+SVC-ProdBI2@svclnk.com
+
+Lowers:
+SVC-PreProdBI2@svclnk.com
+bi-exos-app-01
+
+Servers: 
+sql-app-dev2-eus2-01
+
+sql-app-perf-eus2-01
+
+sql-app-uat2-eus2-01
+
+sql-app-stage-eus2-01
+
+sql-app-prod-eus2-01
+
+Databases: 
+
+AutomationReportingDB
+LegacyDefaultDataDB
