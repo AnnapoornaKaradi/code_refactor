@@ -1,0 +1,67 @@
+2025-11-25T10:28:15.5495837Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5497357Z 
+2025-11-25T10:28:15.5497884Z [0m  on az_sql.tf line 473, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5505321Z  473: 	elastic_pool_id = azurerm_mssql_elasticpool.env[4m[each.value.pool_key][0m.id
+2025-11-25T10:28:15.5506029Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5506817Z [0m    [90m|[0m [1mazurerm_mssql_elasticpool.env[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5508339Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5508637Z [0m
+2025-11-25T10:28:15.5508975Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5509268Z [0m[0m
+2025-11-25T10:28:15.5581538Z [31m
+2025-11-25T10:28:15.5582370Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5582746Z 
+2025-11-25T10:28:15.5583468Z [0m  on az_sql.tf line 473, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5584385Z  473: 	elastic_pool_id = azurerm_mssql_elasticpool.env[4m[each.value.pool_key][0m.id
+2025-11-25T10:28:15.5585118Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5586702Z [0m    [90m|[0m [1mazurerm_mssql_elasticpool.env[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5587201Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5587585Z [0m
+2025-11-25T10:28:15.5588679Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5589178Z [0m[0m
+2025-11-25T10:28:15.5669290Z [31m
+2025-11-25T10:28:15.5670291Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5670417Z 
+2025-11-25T10:28:15.5670845Z [0m  on az_sql.tf line 480, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5671697Z  480: 	read_scale = local.site_type != "primary" ? null : local.az_sql_elastic_pool_iterator[4m[each.value.pool_key][0m.sku.tier == "Premium" || local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "BusinessCritical" ? true : false
+2025-11-25T10:28:15.5672071Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5672517Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5674253Z [0m    [90m|[0m [1mlocal.az_sql_elastic_pool_iterator[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5674568Z [0m
+2025-11-25T10:28:15.5675019Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5675327Z [0m[0m
+2025-11-25T10:28:15.5739002Z [31m
+2025-11-25T10:28:15.5741737Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5742802Z 
+2025-11-25T10:28:15.5754210Z [0m  on az_sql.tf line 480, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5755900Z  480: 	read_scale = local.site_type != "primary" ? null : local.az_sql_elastic_pool_iterator[4m[each.value.pool_key][0m.sku.tier == "Premium" || local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "BusinessCritical" ? true : false
+2025-11-25T10:28:15.5756320Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5757029Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5757442Z [0m    [90m|[0m [1mlocal.az_sql_elastic_pool_iterator[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5757700Z [0m
+2025-11-25T10:28:15.5758060Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5758346Z [0m[0m
+2025-11-25T10:28:15.5841629Z [31m
+2025-11-25T10:28:15.5842039Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5842137Z 
+2025-11-25T10:28:15.5842613Z [0m  on az_sql.tf line 480, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5843608Z  480: 	read_scale = local.site_type != "primary" ? null : local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "Premium" || local.az_sql_elastic_pool_iterator[4m[each.value.pool_key][0m.sku.tier == "BusinessCritical" ? true : false
+2025-11-25T10:28:15.5843968Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5844427Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5845172Z [0m    [90m|[0m [1mlocal.az_sql_elastic_pool_iterator[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5845451Z [0m
+2025-11-25T10:28:15.5845777Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5846042Z [0m[0m
+2025-11-25T10:28:15.5946259Z [31m
+2025-11-25T10:28:15.5949251Z [1m[31mError: [0m[0m[1mInvalid index[0m
+2025-11-25T10:28:15.5951353Z 
+2025-11-25T10:28:15.5952053Z [0m  on az_sql.tf line 480, in resource "azurerm_mssql_database" "env":
+2025-11-25T10:28:15.5953242Z  480: 	read_scale = local.site_type != "primary" ? null : local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "Premium" || local.az_sql_elastic_pool_iterator[4m[each.value.pool_key][0m.sku.tier == "BusinessCritical" ? true : false
+2025-11-25T10:28:15.5954005Z [0m    [90m|----------------[0m
+2025-11-25T10:28:15.5954654Z [0m    [90m|[0m [1meach.value.pool_key[0m is "app_pool11"[0m
+2025-11-25T10:28:15.5955324Z [0m    [90m|[0m [1mlocal.az_sql_elastic_pool_iterator[0m is object with 3 attributes[0m
+2025-11-25T10:28:15.5955599Z [0m
+2025-11-25T10:28:15.5955933Z The given key does not identify an element in this collection value.
+2025-11-25T10:28:15.5956200Z [0m[0m
+2025-11-25T10:28:15.7339648Z Terraform Plan Exit Code: 1
+2025-11-25T10:28:15.7372348Z 
