@@ -1,0 +1,605 @@
+locals {
+	az_sql_allowed_service_ip_ranges_by_tag = flatten([for v in data.external.az_sql_allowed_service_tags: jsondecode(v.result.output)])
+	az_sql_allowed_service_ip_ranges_override = flatten([for v in local.az_sql_network_rules.service_ip_ranges: v]) 
+	az_sql_allowed_service_ip_range_full = distinct(concat(
+		local.az_sql_allowed_service_ip_ranges_by_tag,
+		local.az_sql_allowed_service_ip_ranges_override,
+	))
+}
+
+#----- Get the Azure SQL allowed ip ranges by Service Tag
+data "external" "az_sql_allowed_service_tags" {
+	for_each = toset(local.az_sql_network_rules.service_tags)
+	program = [ "bash", "${path.module}/scripts/get_service_tag_ip_ranges.sh", each.key ]
+}
+
+
+#----- Create a random password for the instance
+resource "random_password" "az_sql_admin_password" {
+	for_each = local.az_sql_instances
+
+	keepers = {
+		credentials = local.my_env.keepers.credentials
+	}
+	
+	length = 30
+	special = false
+}
+
+#----- Create the TDE keys
+# These should only be created in the primary site in geo environments since keys need to stay synced
+resource "azurerm_key_vault_key" "az_sql_tde" {
+	for_each = (local.site_type == "primary" ? 
+		{ for k, v in (flatten(
+			[ for instance_key, instance_value in local.az_sql_instances :
+				[ for suffix in local.my_env.keepers.encryption_key_suffixes :
+					{
+						instance_key = instance_key
+						az_sql_name = local.az_sql_instance_names[instance_key]
+						key_name = "${local.az_sql_instance_names[instance_key]}--${suffix}"
+						suffix = suffix
+					}
+				]
+			])) : "${v.instance_key}_${v.suffix}" => v
+		}
+		:
+		{}
+	)
+	
+	provider = azurerm.common
+	
+	name = each.value.key_name
+	key_vault_id = data.terraform_remote_state.baseinfra_00["local"].outputs.key_vaults.common["enc"].id
+	
+	key_type = "RSA-HSM"
+	key_size = 2048
+	key_opts = [ "decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey" ]
+}
+
+#----- If this is a primary geo site, sync the TDE keys to the partner regions vault.
+# This has to occur in the primary site, because it will complain on key rotation that the secondary site does not have access to the key
+resource "null_resource" "az_sql_tde_key_sync" {
+	for_each = local.i_am_active_geo == true && local.site_type == "primary" ? local.az_sql_instances : {}
+	
+	triggers = {
+		key_name = azurerm_key_vault_key.az_sql_tde["${each.key}_${local.my_env.keepers.encryption_key_use}"].name
+	}
+	
+	provisioner "local-exec" {
+		command = "chmod +x ${path.module}/scripts/copy_kv_key.sh; ${path.module}/scripts/copy_kv_key.sh $SOURCE_VAULT_NAME $DEST_VAULT_NAME $KEY_NAME"
+		
+		environment = {
+			SOURCE_VAULT_NAME = data.terraform_remote_state.baseinfra_00["local"].outputs.key_vaults.common["enc"].name
+			DEST_VAULT_NAME = data.terraform_remote_state.baseinfra_00["partner"].outputs.key_vaults.common["enc"].name
+			KEY_NAME = azurerm_key_vault_key.az_sql_tde["${each.key}_${local.my_env.keepers.encryption_key_use}"].name
+		}
+	}
+}
+
+#----- Create the Azure SQL server instance
+resource "azurerm_mssql_server" "env" {
+	for_each = local.az_sql_instances
+
+	name = local.az_sql_instance_names[each.key]
+	resource_group_name = data.terraform_remote_state.baseinfra_00["local"].outputs.resource_groups["data"].name
+	location = data.terraform_remote_state.baseinfra_00["local"].outputs.resource_groups["data"].location
+	
+	administrator_login = var.default_admin_username
+	administrator_login_password = random_password.az_sql_admin_password[each.key].result
+	
+	azuread_administrator {
+		login_username = local.my_mg.rbac.az_sql_admin_name
+		object_id = local.my_mg.rbac.az_sql_admin_group_oid
+	}
+	
+	version = "12.0"
+	
+	minimum_tls_version = "1.2"
+
+	identity {
+		type = "SystemAssigned, UserAssigned"
+		identity_ids = [ data.terraform_remote_state.baseinfra_00["local"].outputs.az_sql[each.key].identity.id ]
+	}
+	
+	primary_user_assigned_identity_id = data.terraform_remote_state.baseinfra_00["local"].outputs.az_sql[each.key].identity.id
+
+	# This parameter works on instance creation, but will not apply changes during key rotation.
+	# Because of this it will be ignored on future updates and a separate block will handle key rotation.
+	transparent_data_encryption_key_vault_key_id = local.site_type == "primary" ? azurerm_key_vault_key.az_sql_tde["${each.key}_${local.my_env.keepers.encryption_key_use}"].id : data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.key].partner_tde_key_id
+	
+	tags = merge(
+		local.tags,
+		local.resource_tags["sql_server"],
+	)
+	
+	lifecycle {
+		ignore_changes = [
+			tags,
+			# This parameter works on instance creation, but will not apply changes during key rotation.
+			# Because of this it will be ignored on future updates and a separate block will handle key rotation.
+			transparent_data_encryption_key_vault_key_id,
+		]
+	}
+}
+
+resource "azurerm_mssql_server_transparent_data_encryption" "env" {
+	for_each = local.az_sql_instances
+		
+	server_id = azurerm_mssql_server.env[each.key].id
+	key_vault_key_id = local.site_type == "primary" ? azurerm_key_vault_key.az_sql_tde["${each.key}_${local.my_env.keepers.encryption_key_use}"].id : data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.key].partner_tde_key_id
+	
+	depends_on = [
+		azurerm_key_vault_key.az_sql_tde,
+		null_resource.az_sql_tde_key_sync,
+	]
+}
+
+data "external" "az_sql_firewall_state" {
+	for_each = local.az_sql_instances
+	
+	program = [ "bash", "${path.module}/scripts/az_sql_firewall_state.sh", "data" ]
+	
+	query = {
+		sql_server_name = azurerm_mssql_server.env[each.key].name
+		rg_name = azurerm_mssql_server.env[each.key].resource_group_name
+		desired_ip_ranges = (
+			contains( local.az_sql_allow_trusted_services, local.my_env_short) ? 
+			join("|", local.az_sql_network_rules.ip_ranges) : 
+			join("|", concat(local.az_sql_network_rules.ip_ranges, local.az_sql_allowed_service_ip_range_full)) 
+		)
+		desired_subnet_ids = join("|", distinct(concat(
+			local.az_sql_network_rules.subnet_ids,
+			[ for v in local.az_sql_network_rules.subnet_id_refs : data.terraform_remote_state.baseinfra_00["local"].outputs.network.subnets[v].id ],
+		)))
+		dry_run = "true"
+	}
+	
+	depends_on = [
+		azurerm_mssql_server.env,
+	]
+}
+
+resource "null_resource" "az_sql_apply_firewall_state" {
+	for_each = local.az_sql_instances
+	
+	triggers = {
+		changes = data.external.az_sql_firewall_state[each.key].result.changes
+	}
+	
+	provisioner "local-exec" {
+		command = "chmod +x ${path.module}/scripts/az_sql_firewall_state.sh; ${path.module}/scripts/az_sql_firewall_state.sh cli $SQL_SERVER_NAME $RG_NAME $DESIRED_IP_RANGES $DESIRED_SUBNET_IDS $DRY_RUN"
+		
+		environment = {
+			SQL_SERVER_NAME = azurerm_mssql_server.env[each.key].name
+			RG_NAME = azurerm_mssql_server.env[each.key].resource_group_name
+			DESIRED_IP_RANGES = (
+				contains( local.az_sql_allow_trusted_services, local.my_env_short) ? 
+				coalesce( join("|", local.az_sql_network_rules.ip_ranges), "none" ):
+				coalesce( join("|", concat(local.az_sql_network_rules.ip_ranges, local.az_sql_allowed_service_ip_range_full)), "none" )
+			)	
+			DESIRED_SUBNET_IDS = join("|", distinct(concat(
+				local.az_sql_network_rules.subnet_ids,
+				[ for v in local.az_sql_network_rules.subnet_id_refs : data.terraform_remote_state.baseinfra_00["local"].outputs.network.subnets[v].id ],
+			)))
+			DRY_RUN = "false"
+		}
+	}
+}
+
+#----- Create the column key used in reportingdb to encrypt application keys for use with SSRS
+resource "azurerm_key_vault_key" "reportingdb_cmk" {
+	for_each = { for v in concat(local.my_env.keepers.encryption_key_suffixes, local.my_env.old_keepers.reportingdb_cmk_key_suffixes) : v => v }
+
+	provider = azurerm.common
+
+	name = "AzureSQL--ReportingDB-CMK--${each.value}"
+	key_vault_id = data.terraform_remote_state.baseinfra_00["local"].outputs.key_vaults["common"]["enc_rpt"].id
+	key_type = "RSA-HSM"
+	key_size = 2048
+	
+	key_opts = [ "encrypt", "decrypt", "sign", "verify", "unwrapKey", "wrapKey" ]
+}
+
+#----- Create the elastic pools
+locals {
+
+az_sql_elastic_pool_iterator = { for k, v in (flatten(
+	[ for instance_key, instance_value in local.az_sql_instances :
+		[ for pool_key, pool_value in local.az_sql_elastic_pool_specs[local.az_sql_my_elastic_pool_spec[instance_key]] :
+			{
+				instance_key = instance_key
+				pool_name = pool_value.name
+				license_type = pool_value.license_type
+				max_size_gb = pool_value.max_size_gb
+				zone_redundant = pool_value.zone_redundant
+				sku = pool_value.sku
+				per_database_settings = pool_value.per_database_settings
+			}
+		]
+	]
+)) : "${v.instance_key}_${v.pool_name}" => v }
+
+}
+
+resource "azurerm_mssql_elasticpool" "env" {
+	for_each = local.az_sql_elastic_pool_iterator
+		
+	name = each.value.pool_name
+	resource_group_name = azurerm_mssql_server.env[each.value.instance_key].resource_group_name
+	location = azurerm_mssql_server.env[each.value.instance_key].location
+	
+	server_name = azurerm_mssql_server.env[each.value.instance_key].name
+	license_type = each.value.license_type
+	max_size_gb = each.value.max_size_gb
+	zone_redundant = each.value.zone_redundant
+	
+	sku {
+		name = each.value.sku.name
+		tier = each.value.sku.tier
+		family = each.value.sku.family
+		capacity = each.value.sku.capacity
+	}
+	
+	per_database_settings {
+		min_capacity = each.value.per_database_settings.min_capacity
+		max_capacity = each.value.per_database_settings.max_capacity
+	}
+	
+	maintenance_configuration_name = local.maintence-window-time
+	
+	tags = merge(
+		local.tags,
+		local.resource_tags["sql_server"],
+	)
+	
+	lifecycle {
+		ignore_changes = [ tags ]
+	}
+}
+
+#----- Add the admin password to Infra AKV
+resource "azurerm_key_vault_secret" "az_sql_admin_password_infra" {
+	for_each = local.az_sql_instances
+
+	name = (each.key == "app" ? "AzureSQL--AdminPassword" : "AzureSQL--${each.key}--AdminPassword")
+	value = random_password.az_sql_admin_password[each.key].result
+	key_vault_id = data.terraform_remote_state.baseinfra_00["local"].outputs.key_vaults["env"]["infra"].id
+}
+
+#----- Add the admin password to DBA AKV
+resource "azurerm_key_vault_secret" "az_sql_admin_password_dba" {
+	for_each = local.az_sql_instances
+
+	name = (each.key == "app" ? "AzureSQL--AdminPassword" : "AzureSQL--${each.key}--AdminPassword")
+	value = random_password.az_sql_admin_password[each.key].result
+	key_vault_id = data.terraform_remote_state.baseinfra_00["local"].outputs.key_vaults["env"]["dba"].id
+}
+
+#----- Add the Azure SQL private link
+resource "azurerm_private_endpoint" "az_sql" {
+	for_each = local.az_sql_instances
+
+	name = azurerm_mssql_server.env[each.key].name
+	resource_group_name = azurerm_mssql_server.env[each.key].resource_group_name
+	location = azurerm_mssql_server.env[each.key].location
+	
+	subnet_id = data.terraform_remote_state.baseinfra_00["local"].outputs.network.subnets["app_plink"].id
+	
+	private_service_connection {
+		name = (each.key == "app" ? "sql-private-link" : "sql-${each.key}-private-link")
+		private_connection_resource_id = azurerm_mssql_server.env[each.key].id
+		is_manual_connection = false
+		subresource_names = [ "sqlServer" ]
+	}
+	
+	tags = local.tags
+	lifecycle {
+		ignore_changes = [
+			tags,
+		]
+	}
+}
+	
+#----- Add the DNS record for SQL private link
+resource "azurerm_private_dns_a_record" "az_sql_private_link" {
+	for_each = local.az_sql_instances
+	
+	name = azurerm_mssql_server.env[each.key].name
+	resource_group_name = data.terraform_remote_state.baseinfra_00["local"].outputs.dns.private_zone.rg_name
+	
+	zone_name = data.terraform_remote_state.baseinfra_00["local"].outputs.dns.private_zone.name
+	records = [ azurerm_private_endpoint.az_sql[each.key].private_service_connection[0].private_ip_address ]
+	ttl = 300
+}
+
+#----- Add vulnerability assessment
+resource "azurerm_storage_container" "az_sql_audit" {
+	for_each = local.az_sql_instances
+	
+	name = azurerm_mssql_server.env[each.key].name
+	storage_account_name = data.terraform_remote_state.baseinfra_00["local"].outputs.storage_accounts["audit"].name
+	container_access_type = "private"
+}
+
+resource "azurerm_mssql_server_security_alert_policy" "env" {
+	for_each = local.az_sql_instances
+	
+	server_name = azurerm_mssql_server.env[each.key].name
+	resource_group_name = azurerm_mssql_server.env[each.key].resource_group_name
+	state = "Enabled"
+	
+	email_addresses = [
+		var.email_addresses["infosec_base"],
+	]
+}
+
+resource "azurerm_role_assignment" "az_sql_audit" {
+	for_each = local.az_sql_instances
+	
+	scope = data.terraform_remote_state.baseinfra_00["local"].outputs.storage_accounts["audit"].id
+	role_definition_name = "Storage Blob Data Contributor"
+	principal_id = azurerm_mssql_server.env[each.key].identity[0].principal_id
+}
+
+data "external" "az_sql_vulnerability_assessment" {
+	for_each = local.az_sql_instances
+	
+	program = [ "bash", "${path.module}/scripts/az_sql_vulnerability_assessment.sh" ]
+	
+	query = {
+		subscription_id = data.azurerm_subscription.env.subscription_id
+		rg_name = azurerm_mssql_server.env[each.key].resource_group_name
+		sql_server_name = azurerm_mssql_server.env[each.key].name
+		storage_container_path = azurerm_storage_container.az_sql_audit[each.key].id
+		emails = jsonencode([ var.email_addresses["infosec_ops"] ])
+		previous_output = (var.first_run ? "First run" : lookup(data.terraform_remote_state.baseinfra_00["local"].outputs, "az_sql_vulnerability_assessment_previous_output", null) != null ? data.terraform_remote_state.baseinfra_00["local"].outputs.az_sql_vulnerability_assessment_previous_output[each.key] : "First run")
+	}
+}
+
+resource "null_resource" "az_sql_vulnerability_assessment" {
+	for_each = local.az_sql_instances
+	
+	triggers = {
+		changes = data.external.az_sql_vulnerability_assessment[each.key].result.changes
+	}
+	
+	provisioner "local-exec" {
+		command = "/usr/bin/az rest --method put --url https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RG_NAME/providers/Microsoft.Sql/servers/$SQL_SERVER_NAME/vulnerabilityAssessments/Default?api-version=2018-06-01-preview --body \"$BODY\""
+		
+		environment = {
+			SUBSCRIPTION_ID = data.azurerm_subscription.env.subscription_id
+			RG_NAME = azurerm_mssql_server.env[each.key].resource_group_name
+			SQL_SERVER_NAME = azurerm_mssql_server.env[each.key].name
+			BODY = templatefile("${path.module}/templates/az_sql_vulnerability_assessment.json", {
+				storage_container_path = azurerm_storage_container.az_sql_audit[each.key].id
+				emails = jsonencode([ var.email_addresses["infosec_ops"] ])
+			})
+		}
+	}
+	
+	depends_on = [
+		azurerm_storage_container.az_sql_audit,
+		azurerm_mssql_server_security_alert_policy.env,
+		azurerm_role_assignment.az_sql_audit,
+	]
+}
+
+#----- Add extended auditing to event hub
+# Note that this conflicts with having the master DB diagnostic logging turned on for the SQLSecurityAuditEvents sink, so that is disabled within the subscription scan
+data "external" "az_sql_extended_auditing" {
+	for_each = local.az_sql_instances
+	
+	program = [ "bash", "${path.module}/scripts/az_sql_extended_auditing.sh" ]
+	
+	query = {
+		rg_name = azurerm_mssql_server.env[each.key].resource_group_name
+		sql_server_name = azurerm_mssql_server.env[each.key].name
+		evh_name = data.terraform_remote_state.common.outputs.event_hub_diag_logging["${local.basic["local"].env_short}_${local.basic["local"].region_short}"].name
+		evh_auth_rule_id = data.terraform_remote_state.common.outputs.event_hub_diag_logging["${local.basic["local"].env_short}_${local.basic["local"].region_short}"].diag_logging_auth_rule_id
+		previous_output = (var.first_run ? "First run" : lookup(data.terraform_remote_state.baseinfra_00["local"].outputs, "az_sql_extended_auditing_previous_output", null) != null ? data.terraform_remote_state.baseinfra_00["local"].outputs.az_sql_extended_auditing_previous_output[each.key] : "First run")
+	}
+
+	depends_on = [
+		azurerm_mssql_server.env,
+	]
+}
+
+resource "null_resource" "az_sql_extended_auditing" {
+	for_each = local.az_sql_instances
+	
+	triggers = {
+		changes = data.external.az_sql_extended_auditing[each.key].result.changes
+		keeper = "11/14/2022"
+	}
+	
+	provisioner "local-exec" {
+		command = "/usr/bin/az sql server audit-policy update --name $SQL_SERVER_NAME --resource-group $RG_NAME --state Enabled --event-hub-target-state Enabled --event-hub-authorization-rule-id $EVH_AUTH_RULE_ID --event-hub $EVH_NAME; /usr/bin/az sql server audit-policy update --name $SQL_SERVER_NAME --resource-group $RG_NAME --log-analytics-target-state Disabled;"
+		
+		environment = {
+			RG_NAME = azurerm_mssql_server.env[each.key].resource_group_name
+			SQL_SERVER_NAME = azurerm_mssql_server.env[each.key].name
+			EVH_NAME = data.terraform_remote_state.common.outputs.event_hub_diag_logging["${local.basic["local"].env_short}_${local.basic["local"].region_short}"].name
+			EVH_AUTH_RULE_ID = data.terraform_remote_state.common.outputs.event_hub_diag_logging["${local.basic["local"].env_short}_${local.basic["local"].region_short}"].diag_logging_auth_rule_id
+		}
+	}
+	
+	depends_on = [
+		azurerm_mssql_server.env,
+	]
+}
+
+output "az_sql_vulnerability_assessment_previous_output" {
+	value = { for k, v in local.az_sql_instances : k => data.external.az_sql_vulnerability_assessment[k].result.changes }
+}
+
+output "az_sql_extended_auditing_previous_output" {
+	value = { for k, v in local.az_sql_instances : k => data.external.az_sql_extended_auditing[k].result.changes }
+}
+
+
+#----- Add the databases for each server
+resource "azurerm_mssql_database" "env" {
+	for_each = { for k, v in (flatten(
+		[ for instance_key, instance_value in local.az_sql_instances :
+			[ for db_key, db_value in local.az_sql_db_specs[local.az_sql_my_db_spec[instance_key]] :
+				{
+					instance_key = instance_key
+					pool_key = join("_", [
+						instance_key,
+						(
+							lookup(lookup(db_value.pool, "env_override", {}), local.my_env_short, null) != null ? db_value.pool.env_override[local.my_env_short] :
+							lookup(lookup(db_value.pool, "mg_override", {}), local.my_mg_ref, null) != null ? db_value.pool.mg_override[local.my_mg_ref] :
+							db_value.pool.default
+						)
+					])
+					db_key = db_key
+					max_db_size = (
+						lookup(lookup(db_value.max_db_size, "env_override", {}), local.my_env_short, null) != null ? db_value.max_db_size.env_override[local.my_env_short] :
+						lookup(lookup(db_value.max_db_size, "mg_override", {}), local.my_mg_ref, null) != null ? db_value.max_db_size.mg_override[local.my_mg_ref] :
+						db_value.max_db_size.default
+					)
+					retention_policy_ref = (
+						lookup(lookup(instance_value.retention_spec, "env_override", {}), local.my_env_short, null) != null ? instance_value.retention_spec.env_override[local.my_env_short] :
+						lookup(lookup(instance_value.retention_spec, "mg_override", {}), local.my_mg_ref, null) != null ? instance_value.retention_spec.mg_override[local.my_mg_ref] :
+						instance_value.retention_spec["default"]
+					)
+				}
+			]
+		]
+	)) : "${v.instance_key}_${v.db_key}" => v }
+	
+	name = each.value.db_key
+	server_id = azurerm_mssql_server.env[each.value.instance_key].id
+	elastic_pool_id = azurerm_mssql_elasticpool.env[each.value.pool_key].id
+	
+	create_mode = local.site_type == "primary" ? null : "Secondary"
+	creation_source_database_id = local.site_type == "primary" ? null : data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.value.instance_key].dbs.ids[each.value.db_key]
+	
+	max_size_gb = local.site_type == "primary" ? each.value.max_db_size : null
+	
+	read_scale = local.site_type != "primary" ? null : local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "Premium" || local.az_sql_elastic_pool_iterator[each.value.pool_key].sku.tier == "BusinessCritical" ? true : false
+	
+	# ARM retains a value of 0 for week_of_year when yearlies are disabled. Terraform does not currently allow having week_of_year set to 0 even when yearly backups are not configured.  ARM retains a value of 0 for week_of_year when yearlies are disabled.
+	# This is a temporary workaround since most environments do not need long term retention.  Once the provider is fixed to allow a 0 value, the retention policy should be updated and this dynamic changed to a resource block thats always defined
+	dynamic long_term_retention_policy {
+		for_each = (local.az_sql_retention_policies[each.value.retention_policy_ref].weekly == "PT0S" &&
+			local.az_sql_retention_policies[each.value.retention_policy_ref].monthly == "PT0S" &&
+			local.az_sql_retention_policies[each.value.retention_policy_ref].yearly == "PT0S"
+			? {} : {"default" = "default" }
+		)
+				
+		content {
+			weekly_retention = local.az_sql_retention_policies[each.value.retention_policy_ref].weekly
+			monthly_retention = local.az_sql_retention_policies[each.value.retention_policy_ref].monthly
+			yearly_retention = local.az_sql_retention_policies[each.value.retention_policy_ref].yearly
+			week_of_year = local.az_sql_retention_policies[each.value.retention_policy_ref].week_of_year
+		}
+	}
+
+	tags = merge(
+		local.tags,
+		local.resource_tags["sql_server"],
+	)
+
+	timeouts {
+    	create = "120m"
+  	}
+  	
+  	lifecycle {
+  		ignore_changes = [ license_type, tags ]
+  	}
+}
+
+#----- Create the failover group in the secondary site
+resource "azurerm_mssql_failover_group" "env" {
+	for_each = local.i_am_active_geo && local.site_type == "secondary" ? local.az_sql_instances : {}
+
+	name = "${data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.key].name}-failover-group"
+	
+	server_id = data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.key].id
+	databases = [ for db_key, db_value in data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[each.key].dbs.ids : db_value ]
+	
+	partner_server {
+		id = azurerm_mssql_server.env[each.key].id
+	}
+	
+	read_write_endpoint_failover_policy {
+		mode = "Automatic"
+		grace_minutes = 60
+	}
+	
+	tags = local.geo_tags
+
+	lifecycle {
+		ignore_changes = [
+			tags,
+		]
+	}
+	
+	depends_on = [
+		azurerm_mssql_database.env
+	]
+}
+
+#----- Set the primary server in the failover group based on DR mode
+locals {
+
+az_sql_primary_server = { for k, v in local.az_sql_instances : k => {
+	name = (!local.i_am_active_geo || local.site_type == "primary" ? azurerm_mssql_server.env[k].name :
+		(local.i_am_active_geo && local.site_type == "secondary" && local.my_env.keepers.dr_mode ?
+			azurerm_mssql_server.env[k].name : 
+			data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[k].name
+		)
+	)
+	rg_name = (!local.i_am_active_geo || local.site_type == "primary" ? azurerm_mssql_server.env[k].resource_group_name : 
+		(local.i_am_active_geo && local.site_type == "secondary" && local.my_env.keepers.dr_mode ?
+			azurerm_mssql_server.env[k].resource_group_name :
+			data.terraform_remote_state.baseinfra_01["partner"].outputs.az_sql[k].rg_name
+		)
+	)
+} }
+
+}
+
+resource "null_resource" "sql_failover" {
+	for_each = local.i_am_active_geo && local.site_type == "secondary" ? local.az_sql_instances : {}
+
+	triggers = {
+		primary_server = local.az_sql_primary_server[each.key].name
+	}
+
+	provisioner "local-exec" {
+		command = "/usr/bin/az sql failover-group set-primary --name $FAILOVER_GROUP_NAME --resource-group $RG_NAME --server $PRIMARY_SERVER_NAME"
+		
+		environment = {
+			FAILOVER_GROUP_NAME = azurerm_mssql_failover_group.env[each.key].name
+			RG_NAME = local.az_sql_primary_server[each.key].rg_name
+			PRIMARY_SERVER_NAME = local.az_sql_primary_server[each.key].name
+		}
+	}		
+}		
+
+#----- Generate passwords for the additional local logins
+resource "random_password" "az_sql_local_login_passwords" {
+	for_each = { for k, v in (flatten(
+		[ for instance_key, instance_value in local.az_sql_instances :
+			[ for login_username in local.az_sql_default_state_specs[local.az_sql_my_default_state_spec[instance_key]].add_local_logins :
+				{
+					instance_key = instance_key
+					login_username = login_username
+				}
+			]
+		]
+	)) : "${v.instance_key}_${v.login_username}" => v } 
+	
+	keepers = {
+		credentials = local.my_env.keepers.credentials
+	}
+	
+	length = 50
+	special = false
+	
+	min_upper = 2
+	min_lower = 2
+	min_numeric = 2
+}
