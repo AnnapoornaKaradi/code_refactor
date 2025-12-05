@@ -6,6 +6,10 @@ locals {
     }
   }
 
+  fabric_admin_members = {
+    for k, v in local.fabric_capacity_instances_to_install : 
+    k => sort(toset([ for e in v.admin_email : lower(trimspace(e))]))
+  }
 }
 
 resource "azapi_resource" "fabric_capacity" {
@@ -23,9 +27,7 @@ resource "azapi_resource" "fabric_capacity" {
   body = jsonencode({
     properties = {
       administration = {
-        members = sort(distinct([
-          for e in each.value.admin_email : lower(trimspace(e))
-        ]))
+        members = local.fabric_admin_members[each.key]
       }
     }
     sku = {
