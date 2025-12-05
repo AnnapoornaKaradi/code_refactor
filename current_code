@@ -1,0 +1,83 @@
+locals {
+
+  fabric_names = { for k, v in local.fabric_capacity_instances_to_install :
+    k => {
+      name = lower("fab${v.name}${local.basic["local"].env_short}${local.basic["local"].region_short}${v.numeric}")
+    }
+  }
+
+}
+
+resource "azapi_resource" "fabric_capacity" {
+  for_each = local.fabric_capacity_instances_to_install
+
+  type      = "Microsoft.Fabric/capacities@2022-07-01-preview"
+  name      = local.fabric_names[each.key].name
+  parent_id = data.terraform_remote_state.baseinfra_00["local"].outputs.resource_groups[each.value.rg_ref].id
+  location  = data.terraform_remote_state.baseinfra_00["local"].outputs.resource_groups[each.value.rg_ref].location
+  
+
+  
+  schema_validation_enabled = false
+
+  body = jsonencode({
+    properties = {
+      administration = {
+        members = sort(distinct([
+          for e in each.value.admin_email : lower(trimspace(e))
+        ]))
+      }
+    }
+    sku = {
+      name = lookup(lookup(each.value.sku,"env_override",{}), local.my_env_short, null) != null ? each.value.sku.env_override[local.my_env_short] : lookup(each.value.sku, "default", null)
+      tier = "Fabric"
+    }
+  })
+  
+  ignore_casing = true
+  ignore_missing_property = true
+  tags = local.tags
+
+  lifecycle {
+		ignore_changes = [
+			tags,
+		]
+	}
+}
+
+resource "azurerm_user_assigned_identity" "fabric" {
+	for_each = local.fabric_capacity_instances_to_install
+	
+	name = local.fabric_names[each.key].name
+	resource_group_name = azurerm_resource_group.env["data"].name
+	location = azurerm_resource_group.env["data"].location
+
+	tags = local.tags
+	lifecycle {
+		ignore_changes = [
+			tags,
+		]
+	}
+}
+
+#------ Create Customer Managed Key for fabric capacity
+resource "azurerm_key_vault_key" "fabric_capacity_cmk" {
+    for_each = { for k, v in (flatten(
+      [ for fab_key, fab_value in local.fabric_capacity_instances_to_install :
+        [ for suffix in local.my_env.keepers.encryption_key_suffixes :
+          {
+            name = local.fabric_names[fab_key].name
+            suffix = suffix
+          }
+        ]
+      ]
+    )) : "${v.name}_${v.suffix}" => v }
+
+    provider = azurerm.common
+    name = "${each.value.name}-pbi--${each.value.suffix}"
+    key_vault_id = azurerm_key_vault.common["enc_powerbi"].id
+    key_type = "RSA-HSM"
+    key_size = 4096
+    key_opts = [ "encrypt", "decrypt", "sign", "verify", "unwrapKey", "wrapKey" ]
+
+}
