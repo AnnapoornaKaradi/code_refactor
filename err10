@@ -1,0 +1,9 @@
+2025-12-05T15:20:42.9012990Z [1m[31mError: [0m[0m[1mInvalid or unknown key[0m
+2025-12-05T15:20:42.9013401Z 
+2025-12-05T15:20:42.9015693Z [0m  on fabric_capacity.tf line 4, in data "azapi_resource" "existing_fabric_capacity":
+2025-12-05T15:20:42.9020431Z    4:   id = [4m"${data.terraform_remote_state.baseinfra_00["local"].outputs.resources_groups[each.value.rg_ref].id}/providers/Microsoft.Fabric/capacities@2022-07-01-preview/${local.fabric_names[each.key].name}"[0m
+2025-12-05T15:20:42.9040057Z [0m
+2025-12-05T15:20:42.9043515Z [0m[0m
+2025-12-05T15:20:42.9251878Z Terraform Plan Exit Code: 1
+2025-12-05T15:20:42.9273570Z 
+2025-12-05T15:20:42.9337256Z ##[error]Script failed with exit code: 1
