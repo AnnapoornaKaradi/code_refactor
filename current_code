@@ -10,6 +10,21 @@ locals {
     for k, v in local.fabric_capacity_instances_to_install : 
     k => sort(toset([ for e in v.admin_email : lower(trimspace(e))]))
   }
+  
+  fabric_api_members = {
+    for k, v in local.fabric_capacity_instances_to_install : 
+    k => sort(toset([
+      for m in try(
+        jsondecode(data.azapi_resource.fabric_capacity[k].body).properties.administration.members, 
+        []
+      ) : lower(trimspace(m))
+    ]))
+  }
+
+  fabric_merged_members = {
+    for k, v in local.fabric_capacity_instances_to_install : 
+    k => sort(toset(concat(local.fabric_admin_members[k], local.fabric_api_members[k])))
+  }
 }
 
 resource "azapi_resource" "fabric_capacity" {
@@ -27,7 +42,7 @@ resource "azapi_resource" "fabric_capacity" {
   body = jsonencode({
     properties = {
       administration = {
-        members = local.fabric_admin_members[each.key]
+        members = local.fabric_merged_members[each.key]
       }
     }
     sku = {
