@@ -1,0 +1,81 @@
+locals {
+	fabric_capacity_instances = {
+		data = {
+			name = "app"
+			rg_ref = "data"
+			numeric = "01"
+			sku = {
+				default = "F2"
+				env_override = {
+					sandbox =  "F2"
+					dev2    =  "F8"
+					prod    =  "F64"
+					uat2	=  "F16"
+				}
+			}
+			admin_email = [
+				"Rajesh.Challa@svclnk.com",
+                "Richard.Suhon@svclnk.com",
+                "Halima.Chung@fnf.com",
+                "jeffrey.auguste@fnf.com",
+                "DBSVS-Reporting@fnf.com"
+			]
+			install_in = {
+				envs = [ "dev2","uat2","prod" ]
+			}
+			spn = {
+				default = "cf4fd01a-5190-4ecf-ac46-b1e179fd5bac"
+				env_override = {}
+			}
+			cosmos_role_assign = [
+				"app",
+				"user",
+			]
+		}
+		data = {
+			name = "sds"
+			rg_ref = "data"
+			numeric = "01"
+			sku = {
+				default = "F2"
+				env_override = {
+					sandbox =  "F2"
+					dev2    =  "F8"
+					prod    =  "F64"
+					uat2	=  "F16"
+				}
+			}
+			admin_email = [
+				"Rajesh.Challa@svclnk.com",
+                "Richard.Suhon@svclnk.com",
+                "Halima.Chung@fnf.com",
+                "jeffrey.auguste@fnf.com",
+                "DBSVS-Reporting@fnf.com"
+			]
+			install_in = {
+				envs = [ "dev2","uat2","prod" ]
+			}
+			spn = {
+				default = "cf4fd01a-5190-4ecf-ac46-b1e179fd5bac"
+				env_override = {}
+			}
+			cosmos_role_assign = [
+				"app",
+				"user",
+			]
+		}
+	}
+
+	fabric_capacity_instances_to_install = { for k, v in local.fabric_capacity_instances : k => v
+		if ! contains(keys(v), "install_in")
+		|| (
+			contains(keys(v), "install_in")
+			&& contains(lookup(lookup(v, "install_in", {}), "applications", [ var.app_ref ]), var.app_ref)
+			&& (
+				(lookup(lookup(v, "install_in", {}), "mgs", null) == null && lookup(lookup(v, "install_in", {}), "envs", null) == null)
+				|| contains(lookup(lookup(v, "install_in", {}), "mgs", []), local.my_mg_ref)
+				|| contains(lookup(lookup(v, "install_in", {}), "envs", []), local.my_env_short)
+			)
+		)
+	}
+}
