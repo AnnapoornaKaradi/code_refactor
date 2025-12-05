@@ -1,3 +1,12 @@
+data "azapi_resource" "existing_fabric_capacity"{
+  for_each = local.fabric_capacity_instances_to_install
+
+  id = "${data.terraform_remote_state.baseinfra_00["local"].outputs.resources_groups[each.value.rg_ref].id}/providers/Microsoft.Fabric/capacities@2022-07-01-preview/${local.fabric_names[each.key].name}"
+  type = "Microsoft.Fabric/capacities@2022-07-01-preview"
+}
+
+
+
 locals {
 
   fabric_names = { for k, v in local.fabric_capacity_instances_to_install :
@@ -15,7 +24,7 @@ locals {
     for k, v in local.fabric_capacity_instances_to_install : 
     k => sort(toset([
       for m in try(
-        jsondecode(data.azapi_resource.fabric_capacity[k].body).properties.administration.members, 
+        jsondecode(data.azapi_resource.existing_fabric_capacity[k].body).properties.administration.members, 
         []
       ) : lower(trimspace(m))
     ]))
