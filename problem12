@@ -1,0 +1,8 @@
+5-12-05T12:02:16.1074645Z 
+2025-12-05T12:02:16.1084463Z [0m  on fabric_capacity.tf line 18, in locals:
+2025-12-05T12:02:16.1085375Z   18:         jsondecode([4mdata.azapi.resource[0m.existing_fabric_capacity[k].body).properties.administration.members, 
+2025-12-05T12:02:16.1085954Z [0m
+2025-12-05T12:02:16.1086689Z A data resource "azapi" "resource" has not been declared in the root module.
+2025-12-05T12:02:16.1087189Z [0m[0m
+2025-12-05T12:02:16.1280684Z Terraform Plan Exit Code: 1
+2025-12-05T12:02:16.1327589Z 
