@@ -1,0 +1,17 @@
+
+
+Add a Network rule to allow connection from Fabric to DocumentSvc API on DEV2
+
+Context:
+We’re working on a POC for blob file decryption in Fabric. The approach involves making a RESTful API call to DocumentSvc (currently testing on DEV2).
+
+Current Issue:
+We’re receiving a connection error when calling DocumentSvc. This might be due to firewall restrictions.
+
+Source Address: (Fabric)
+20.41.4.104/31,20.41.4.108/30,20.41.4.208/28,20.41.4.224/27,20.41.5.0/25,20.98.192.168/30,20.98.192.192/27,20.98.193.128/26,20.98.193.192/29,20.98.199.116/31,20.119.156.32/27,20.119.157.64/28,74.249.120.64/26,104.208.203.176/28,135.232.93.144/28,145.132.126.160/27
+
+Destination Address: (DEV2)
+
+20.75.16.191 (Port: 80,443)
+
