@@ -1,0 +1,137 @@
+2026-01-13T15:22:17.3983435Z [31m
+2026-01-13T15:22:17.3984803Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.3985458Z 
+2026-01-13T15:22:17.3986247Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.3986945Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.3987450Z [0m
+2026-01-13T15:22:17.3987923Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.3988447Z [0m[0m
+2026-01-13T15:22:17.4060011Z [31m
+2026-01-13T15:22:17.4061840Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4062585Z 
+2026-01-13T15:22:17.4063382Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4064205Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4064648Z [0m
+2026-01-13T15:22:17.4065085Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4065540Z [0m[0m
+2026-01-13T15:22:17.4134826Z [31m
+2026-01-13T15:22:17.4136420Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4136685Z 
+2026-01-13T15:22:17.4137848Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4138381Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4138695Z [0m
+2026-01-13T15:22:17.4138942Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4139206Z [0m[0m
+2026-01-13T15:22:17.4211962Z [31m
+2026-01-13T15:22:17.4215286Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4215558Z 
+2026-01-13T15:22:17.4216058Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4216418Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4216666Z [0m
+2026-01-13T15:22:17.4216910Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4217177Z [0m[0m
+2026-01-13T15:22:17.4289571Z [31m
+2026-01-13T15:22:17.4291118Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4291384Z 
+2026-01-13T15:22:17.4292069Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4292782Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4293270Z [0m
+2026-01-13T15:22:17.4293751Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4294454Z [0m[0m
+2026-01-13T15:22:17.4363391Z [31m
+2026-01-13T15:22:17.4364151Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4364928Z 
+2026-01-13T15:22:17.4365374Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4365744Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4365992Z [0m
+2026-01-13T15:22:17.4366237Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4366568Z [0m[0m
+2026-01-13T15:22:17.4434530Z [31m
+2026-01-13T15:22:17.4436443Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4437670Z 
+2026-01-13T15:22:17.4438413Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4439724Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4441578Z [0m
+2026-01-13T15:22:17.4442080Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4442615Z [0m[0m
+2026-01-13T15:22:17.4507677Z [31m
+2026-01-13T15:22:17.4509617Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4510528Z 
+2026-01-13T15:22:17.4512323Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4513945Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4514626Z [0m
+2026-01-13T15:22:17.4515166Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4515681Z [0m[0m
+2026-01-13T15:22:17.4766688Z [31m
+2026-01-13T15:22:17.4767365Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4767647Z 
+2026-01-13T15:22:17.4768333Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4769001Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4769509Z [0m
+2026-01-13T15:22:17.4769979Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4770452Z [0m[0m
+2026-01-13T15:22:17.4924154Z [31m
+2026-01-13T15:22:17.4935405Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.4935876Z 
+2026-01-13T15:22:17.4936602Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.4937437Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.4938064Z [0m
+2026-01-13T15:22:17.4938713Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.4939341Z [0m[0m
+2026-01-13T15:22:17.5067860Z [31m
+2026-01-13T15:22:17.5072027Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5073682Z 
+2026-01-13T15:22:17.5076289Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5076985Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5077419Z [0m
+2026-01-13T15:22:17.5077835Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5078292Z [0m[0m
+2026-01-13T15:22:17.5169185Z [31m
+2026-01-13T15:22:17.5170838Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5171135Z 
+2026-01-13T15:22:17.5171929Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5172638Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5173117Z [0m
+2026-01-13T15:22:17.5173589Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5174282Z [0m[0m
+2026-01-13T15:22:17.5253568Z [31m
+2026-01-13T15:22:17.5254335Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5254593Z 
+2026-01-13T15:22:17.5255339Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5255991Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5256256Z [0m
+2026-01-13T15:22:17.5256508Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5256779Z [0m[0m
+2026-01-13T15:22:17.5330930Z [31m
+2026-01-13T15:22:17.5331935Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5332990Z 
+2026-01-13T15:22:17.5334184Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5335490Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5335832Z [0m
+2026-01-13T15:22:17.5336087Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5336354Z [0m[0m
+2026-01-13T15:22:17.5458483Z [31m
+2026-01-13T15:22:17.5460478Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5460785Z 
+2026-01-13T15:22:17.5461584Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5462314Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5462716Z [0m
+2026-01-13T15:22:17.5463063Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5463416Z [0m[0m
+2026-01-13T15:22:17.5516895Z [31m
+2026-01-13T15:22:17.5517925Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5518638Z 
+2026-01-13T15:22:17.5522374Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5522943Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5523834Z [0m
+2026-01-13T15:22:17.5526192Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5527250Z [0m[0m
+2026-01-13T15:22:17.5600930Z [31m
+2026-01-13T15:22:17.5601706Z [1m[31mError: [0m[0m[1mUnsupported attribute[0m
+2026-01-13T15:22:17.5601912Z 
+2026-01-13T15:22:17.5602537Z [0m  on network.tf line 128, in resource "azurerm_network_security_group" "env":
+2026-01-13T15:22:17.5603115Z  128: 				lookup(v[4m.deploy_in[0m, "envs", []),
+2026-01-13T15:22:17.5603530Z [0m
+2026-01-13T15:22:17.5604919Z This object does not have an attribute named "deploy_in".
+2026-01-13T15:22:17.5605290Z [0m[0m
+2026-01-13T15:22:17.6433877Z Terraform Plan Exit Code: 1
