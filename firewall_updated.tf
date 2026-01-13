@@ -1,0 +1,274 @@
+locals{
+	
+	powerbi_source_ips = [ for v in jsondecode(data.external.powerbi_ips.result.output) : v if length(regexall(":", v)) == 0 ]
+
+	firewall_network_rules_iterator = {
+		for k,v in local.firewall_network_rules : k => v
+		if length(lookup(v, "deploy_in", {})) == 0
+		|| (
+			contains(lookup(lookup(v, "deploy_in", {}), "envs", []), local.my_env_short)
+		)
+	}
+}
+
+/*
+	NAT rules:
+		*10002/10003 - nginx_maint and nginx_normal     Nginx edge translation from 80/443 inbound.  These rules flip whether DR mode is active or not.
+		
+	Network rules:
+		10001 - allow_aks_api     Allow outbound connections from the AKS subnets to their API server load balancer
+		10010 - allow_outbound_to_trusted_sftp
+		10100 - block_outbound_ports
+		10200 - allow_outbound_from_local_nets
+		*10302 - allow_inbound_8001_and_4431
+		*10303 - allow_inbound_80_and_443
+
+	Application rules:
+		10000 - allow_aks_provisioning     Allow outbound connections from AKS subnets to different endpoints used for provisioning nodes
+*/
+
+#--------------------------------- NAT rules ---------------------------------
+
+#--------------------------------- Network rules ---------------------------------
+#----- Add the necessary firewall exceptions to allow communications from the nodes to the API server
+# Resolve the IP address for the AKS API load balancer
+data "dns_a_record_set" "aks_api" {
+	for_each = local.aks_instances
+
+	host = azurerm_kubernetes_cluster.env[each.key].fqdn
+}
+
+#----- Get the Azure PowerBI ip ranges
+data "external" "powerbi_ips" {
+	program = [ "bash", "${path.module}/scripts/get_powerbi_ips.sh" ]
+}
+
+
+# !!!!! This will not work if a second cluster is created as the priority will be the same
+resource "azurerm_firewall_network_rule_collection" "allow_aks_api" {
+	for_each = local.aks_instances
+
+	name = "allow_aks_api"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10001
+	action = "Allow"
+	
+	rule {
+		name = "allow_udp"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = data.dns_a_record_set.aks_api[each.key].addrs
+		destination_ports = [ "53", "1194", "123" ]
+		
+		protocols = [ "UDP" ]
+	}
+	
+	rule {
+		name = "allow_tcp"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = data.dns_a_record_set.aks_api[each.key].addrs
+		destination_ports = [ "22", "443", "9000" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow AKS services to hit Fabric
+resource "azurerm_firewall_network_rule_collection" "allow_aks_powerbi" {
+	for_each = { for k,v in local.fabric_capacity_instances_to_install: k => v if k == "data"} ## TEMP BUG FIX
+
+	name = "allow_aks_powerbi"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10002
+	action = "Allow"
+	
+	rule {
+		name = "allow_mssql"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = local.powerbi_source_ips
+		destination_ports = [ "1433" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow AKS services to hit Fabric
+resource "azurerm_firewall_network_rule_collection" "allow_fabric_data_powerbi" {
+	name = "allow_fabric_data_powerbi"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10004
+	action = "Allow"
+	
+	rule {
+		name = "allow_mssql"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = local.powerbi_source_ips
+		destination_ports = [ "1433" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow services to hit trusted SFTP servers
+resource "azurerm_firewall_network_rule_collection" "allow_outbound_to_trusted_sftp" {
+	name = "allow_outbound_to_trusted_sftp"
+	
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10010
+	action = "Allow"
+	
+	dynamic "rule" {
+		for_each = local.firewall_allow_sftp_outbound
+		iterator = each
+		
+		content {
+			name = each.key
+			source_addresses = local.network_info.service_address_spaces
+	
+			destination_addresses = each.value	
+			destination_ports = [ "22" ]
+		
+			protocols = [ "TCP" ]
+		}
+	}
+}
+	
+#----- Block known outbound ports for RPC, SQL, SMB, and SSH
+resource "azurerm_firewall_network_rule_collection" "block_outbound_ports" {
+	name = "block_outbound_ports"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10100
+	action = "Deny"
+	
+	rule {
+		name = "block_outbound_ports"
+		
+		source_addresses = [ "*" ]
+		
+		destination_addresses = [ "*" ]
+		destination_ports = [ "135", "137", "138", "139", "1433", "1434", "445", "22" ]
+
+		protocols = [ "TCP", "UDP" ]
+	}
+}
+
+#----- Allow outbound traffic from local vNets
+resource "azurerm_firewall_network_rule_collection" "allow_outbound_from_local_nets" {
+	name = "allow_outbound_from_local_nets"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10200
+	action = "Allow"
+	
+	rule {
+		name = "allow_outbound_from_local_nets"
+		
+		source_addresses = local.network_info.local_address_spaces
+		
+		destination_addresses = [ "*" ]
+		destination_ports = [ "*" ]
+		
+		protocols = [ "TCP", "UDP", "ICMP" ]
+	}
+}
+
+#--------------------------------- Application rules ---------------------------------
+#----- Add the necessary firewall exceptions to allow provisioning of the cluster and each node pool
+# !!!!! This will not work if a second cluster is created as the priority will be the same
+resource "azurerm_firewall_application_rule_collection" "allow_aks_provisioning" {
+	for_each = local.aks_instances
+	
+	name = "allow_aks_provisioning"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10000
+	action = "Allow"
+	
+	rule {
+		name = "allow_http"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		target_fqdns = [
+			"aksrepos.azurecr.io",
+			"*blob.core.windows.net",
+			"mcr.microsoft.com",
+			"*cdn.mscr.io",
+			"*.data.mcr.microsoft.com",
+			"management.azure.com",
+			"login.microsoftonline.com",
+			"ntp.ubuntu.com",
+			"packages.microsoft.com",
+			"acs-mirror.azureedge.net"
+		]
+		
+		protocol {
+			port = "80"
+			type = "Http"
+		}
+	}
+
+	rule {
+		name = "allow_https"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		target_fqdns = [
+			"aksrepos.azurecr.io",
+			"*blob.core.windows.net",
+			"mcr.microsoft.com",
+			"*cdn.mscr.io",
+			"*.data.mcr.microsoft.com",
+			"management.azure.com",
+			"login.microsoftonline.com",
+			"ntp.ubuntu.com",
+			"packages.microsoft.com",
+			"acs-mirror.azureedge.net"
+		]
+		
+		protocol {
+			port = "443"
+			type = "Https"
+		}
+	}
+}
+
+
+
+resource "azurerm_firewall_network_rule_collection" "deploy_in_rules" {
+	for_each = local.firewall_network_rules_iterator
+	name = each.key
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = each.value.priority
+	action = each.value.action
+	
+	rule {
+		name = "allow_fabric_to_documentsvc"
+		
+		source_addresses = each.value.source_addresses
+		destination_addresses = each.value.destination_addresses
+		destination_ports = each.value.destination_ports
+		protocols = each.value.protocols
+	}
+}
