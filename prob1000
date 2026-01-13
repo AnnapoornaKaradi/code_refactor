@@ -1,0 +1,8 @@
+Error: Reference to undeclared local value
+
+  on firewall.tf line 122, in resource "azurerm_firewall_network_rule_collection" "allow_fabric_to_documentsvc":
+ 122: 	for_each = local.deploy_in.envs == "dev2" ? { "dev2" = true } : {}
+
+A local value with the name "deploy_in" has not been declared.
+
+Terraform Plan Exit Code: 1
