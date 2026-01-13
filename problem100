@@ -1,0 +1,142 @@
+ : error CS5001: Program does not contain a static 'Main' method suitable for an entry point [/src/BCOWebJobDailyOnce/BCOWebJobDailyOnce.csproj]
+
+
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+FROM icsechgdacrn1.azurecr.io/dotnet-runtime:8-dev AS base
+USER root
+
+RUN mkdir /app && chmod -R 777 /app
+
+## BUILD SECTION
+FROM icsechgdacrn1.azurecr.io/dotnet-sdk:latest-dev AS builder
+USER root
+WORKDIR /src
+
+COPY ["BCOWebJobDailyOnce.csproj", "BCOWebJobDailyOnce/"]
+RUN dotnet restore "BCOWebJobDailyOnce/BCOWebJobDailyOnce.csproj"
+COPY . .
+WORKDIR "/src/BCOWebJobDailyOnce"
+RUN dotnet build "BCOWebJobDailyOnce.csproj" -c Release -o /app/build
+USER nonroot
+
+## PUBLISH SECTION
+FROM builder AS publish
+USER root
+RUN dotnet publish "BCOWebJobDailyOnce.csproj" -c Release -o /app/publish
+USER nonroot
+
+## IMAGE PUSH SECTION
+FROM base AS final
+WORKDIR /app
+RUN apk add --no-cache  ca-certificates
+ADD FNFPHXIssuingCA.crt /usr/local/share/ca-certificates/FNFPHXIssuingCA.crt
+ADD FNFRootCA.crt /usr/local/share/ca-certificates/FNFRootCA.crt
+ADD FNFProdGlobalRootCA.crt /usr/local/share/ca-certificates/FNFProdGlobalRootCA.crt
+ADD FNFProdGlobalSubCA01.crt /usr/local/share/ca-certificates/FNFProdGlobalSubCA01.crt
+ADD FNFProdGlobalSubCA02.crt /usr/local/share/ca-certificates/FNFProdGlobalSubCA02.crt
+ADD FNFProdGlobalSub03.crt /usr/local/share/ca-certificates/FNFProdGlobalSub03.crt
+RUN chmod 644 /usr/local/share/ca-certificates/FNFPHXIssuingCA.crt 
+RUN chmod 644 /usr/local/share/ca-certificates/FNFRootCA.crt 
+RUN chmod 644 /usr/local/share/ca-certificates/FNFProdGlobalRootCA.crt 
+RUN chmod 644 /usr/local/share/ca-certificates/FNFProdGlobalSubCA01.crt 
+RUN chmod 644 /usr/local/share/ca-certificates/FNFProdGlobalSubCA02.crt
+RUN chmod 644 /usr/local/share/ca-certificates/FNFProdGlobalSub03.crt && update-ca-certificates
+COPY --from=publish --chown=65532:65532 /app/publish .
+USER root 
+RUN apk del wget apk-tools git busybox
+
+USER nonroot
+
+ENTRYPOINT ["dotnet", "BCOWebJobDailyOnce.dll"] 
+
+
+
+
+
+
+
+
+
+
+
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="KubernetesCrobScheduler.yaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.0" />
+    <PackageReference Include="Azure.Identity" Version="1.13.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions" Version="4.0.1" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="5.2.2" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.25" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="3.1.21" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.66.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Common.csproj" />
+    <ProjectReference Include="..\Model\Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="appsettings.UAT.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="footer.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Settings.job">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
