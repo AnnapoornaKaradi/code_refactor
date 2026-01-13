@@ -1,0 +1,8 @@
+Error: Incorrect attribute value type
+
+  on network.tf line 166, in resource "azurerm_network_security_group" "env":
+ 166: 			destination_port_range = (contains(keys(security_rule.value), "destination_port_ranges")) ? null : security_rule.value.destination_port_range
+
+Inappropriate value for attribute "destination_port_range": string required.
+
+Terraform Plan Exit Code: 1
