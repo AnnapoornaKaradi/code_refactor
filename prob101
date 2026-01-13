@@ -1,9 +1,9 @@
 Error: Reference to undeclared local value
 
   on firewall.tf line 6, in locals:
-   6: 		for k,v in local.network_spec.firewall_network_rules_spec : k => v
+   6: 		for k,v in local.firewall_network_rules_spec : k => v
 
-A local value with the name "network_spec" has not been declared.
+A local value with the name "firewall_network_rules_spec" has not been
+declared.
 
 Terraform Plan Exit Code: 1
-
