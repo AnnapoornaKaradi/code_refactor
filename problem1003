@@ -1,0 +1,384 @@
+locals{
+	
+	powerbi_source_ips = [ for v in jsondecode(data.external.powerbi_ips.result.output) : v if length(regexall(":", v)) == 0 ]
+    
+    fabric_source_ips = [ "20.41.4.104/31", "20.41.4.108/30", "20.41.4.208/28", "20.41.4.224/27", "20.41.5.0/25", "20.98.192.168/30", "20.98.192.192/27", "20.98.193.128/26", "20.98.193.192/29", "20.98.199.116/31", "20.119.156.32/27", "20.119.157.64/28", "74.249.120.64/26", "104.208.203.176/28", "135.232.93.144/28", "145.132.126.160/27" ]
+
+    deploy_in = {
+		allow_fabric_inbound_to_dev2 = {
+			envs = [ "dev2" ]
+		}
+	
+	}
+
+}
+
+/*
+	NAT rules:
+		*10002/10003 - nginx_maint and nginx_normal     Nginx edge translation from 80/443 inbound.  These rules flip whether DR mode is active or not.
+		
+	Network rules:
+		10001 - allow_aks_api     Allow outbound connections from the AKS subnets to their API server load balancer
+		10010 - allow_outbound_to_trusted_sftp
+		10100 - block_outbound_ports
+		10200 - allow_outbound_from_local_nets
+		*10302 - allow_inbound_8001_and_4431
+		*10303 - allow_inbound_80_and_443
+
+	Application rules:
+		10000 - allow_aks_provisioning     Allow outbound connections from AKS subnets to different endpoints used for provisioning nodes
+*/
+
+#--------------------------------- NAT rules ---------------------------------
+
+#--------------------------------- Network rules ---------------------------------
+#----- Add the necessary firewall exceptions to allow communications from the nodes to the API server
+# Resolve the IP address for the AKS API load balancer
+data "dns_a_record_set" "aks_api" {
+	for_each = local.aks_instances
+
+	host = azurerm_kubernetes_cluster.env[each.key].fqdn
+}
+
+#----- Get the Azure PowerBI ip ranges
+data "external" "powerbi_ips" {
+	program = [ "bash", "${path.module}/scripts/get_powerbi_ips.sh" ]
+}
+
+
+# !!!!! This will not work if a second cluster is created as the priority will be the same
+resource "azurerm_firewall_network_rule_collection" "allow_aks_api" {
+	for_each = local.aks_instances
+
+	name = "allow_aks_api"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10001
+	action = "Allow"
+	
+	rule {
+		name = "allow_udp"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = data.dns_a_record_set.aks_api[each.key].addrs
+		destination_ports = [ "53", "1194", "123" ]
+		
+		protocols = [ "UDP" ]
+	}
+	
+	rule {
+		name = "allow_tcp"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = data.dns_a_record_set.aks_api[each.key].addrs
+		destination_ports = [ "22", "443", "9000" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow AKS services to hit Fabric
+resource "azurerm_firewall_network_rule_collection" "allow_aks_powerbi" {
+	for_each = { for k,v in local.fabric_capacity_instances_to_install: k => v if k == "data"} ## TEMP BUG FIX
+
+	name = "allow_aks_powerbi"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10002
+	action = "Allow"
+	
+	rule {
+		name = "allow_mssql"
+		
+		source_addresses = local.powerbi_source_ips
+		
+		destination_addresses = []
+		destination_ports = [ "1433" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow AKS services to hit Fabric
+resource "azurerm_firewall_network_rule_collection" "allow_fabric_data_powerbi" {
+	name = "allow_fabric_data_powerbi"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10004
+	action = "Allow"
+	
+	rule {
+		name = "allow_mssql"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		destination_addresses = local.powerbi_source_ips
+		destination_ports = [ "1433" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+
+#------Allow fabric to hit AKS services---------
+resource "azurerm_firewall_network_rule_collection" "allow_fabric_inbound_to_dev2" {
+	count = contains(lookup(local.deploy_in, "allow_fabric_inbound_to_dev2", {}).envs, local.basic["local"].env_short) ? 1 : 0
+	name = "allow_fabric_inbound_dev2"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10005
+	action = "Allow"
+	
+	rule {
+		name = "allow_fabric_inbound_dev2"
+		
+		source_addresses = [ "20.41.4.104/31", "20.41.4.108/30", "20.41.4.208/28", "20.41.4.224/27", "20.41.5.0/25", "20.98.192.168/30", "20.98.192.192/27", "20.98.193.128/26", "20.98.193.192/29", "20.98.199.116/31", "20.119.156.32/27", "20.119.157.64/28", "74.249.120.64/26", "104.208.203.176/28", "135.232.93.144/28", "145.132.126.160/27" ]
+		
+		destination_addresses = [ "20.75.16.191" ]
+		destination_ports = [ "80", "443" ]
+
+		protocols = [ "TCP" ]
+	}
+}
+
+#----- Allow services to hit trusted SFTP servers
+resource "azurerm_firewall_network_rule_collection" "allow_outbound_to_trusted_sftp" {
+	name = "allow_outbound_to_trusted_sftp"
+	
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10010
+	action = "Allow"
+	
+	dynamic "rule" {
+		for_each = local.firewall_allow_sftp_outbound
+		iterator = each
+		
+		content {
+			name = each.key
+			source_addresses = local.network_info.service_address_spaces
+	
+			destination_addresses = each.value	
+			destination_ports = [ "22" ]
+		
+			protocols = [ "TCP" ]
+		}
+	}
+}
+	
+#----- Block known outbound ports for RPC, SQL, SMB, and SSH
+resource "azurerm_firewall_network_rule_collection" "block_outbound_ports" {
+	name = "block_outbound_ports"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10100
+	action = "Deny"
+	
+	rule {
+		name = "block_outbound_ports"
+		
+		source_addresses = [ "*" ]
+		
+		destination_addresses = [ "*" ]
+		destination_ports = [ "135", "137", "138", "139", "1433", "1434", "445", "22" ]
+
+		protocols = [ "TCP", "UDP" ]
+	}
+}
+
+#----- Allow outbound traffic from local vNets
+resource "azurerm_firewall_network_rule_collection" "allow_outbound_from_local_nets" {
+	name = "allow_outbound_from_local_nets"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10200
+	action = "Allow"
+	
+	rule {
+		name = "allow_outbound_from_local_nets"
+		
+		source_addresses = local.network_info.local_address_spaces
+		
+		destination_addresses = [ "*" ]
+		destination_ports = [ "*" ]
+		
+		protocols = [ "TCP", "UDP", "ICMP" ]
+	}
+}
+
+#--------------------------------- Application rules ---------------------------------
+#----- Add the necessary firewall exceptions to allow provisioning of the cluster and each node pool
+# !!!!! This will not work if a second cluster is created as the priority will be the same
+resource "azurerm_firewall_application_rule_collection" "allow_aks_provisioning" {
+	for_each = local.aks_instances
+	
+	name = "allow_aks_provisioning"
+	azure_firewall_name = azurerm_firewall.env["backhaul"].name
+	resource_group_name = azurerm_firewall.env["backhaul"].resource_group_name
+	
+	priority = 10000
+	action = "Allow"
+	
+	rule {
+		name = "allow_http"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		target_fqdns = [
+			"aksrepos.azurecr.io",
+			"*blob.core.windows.net",
+			"mcr.microsoft.com",
+			"*cdn.mscr.io",
+			"*.data.mcr.microsoft.com",
+			"management.azure.com",
+			"login.microsoftonline.com",
+			"ntp.ubuntu.com",
+			"packages.microsoft.com",
+			"acs-mirror.azureedge.net"
+		]
+		
+		protocol {
+			port = "80"
+			type = "Http"
+		}
+	}
+
+	rule {
+		name = "allow_https"
+		
+		source_addresses = local.network_info.aks_address_spaces
+		
+		target_fqdns = [
+			"aksrepos.azurecr.io",
+			"*blob.core.windows.net",
+			"mcr.microsoft.com",
+			"*cdn.mscr.io",
+			"*.data.mcr.microsoft.com",
+			"management.azure.com",
+			"login.microsoftonline.com",
+			"ntp.ubuntu.com",
+			"packages.microsoft.com",
+			"acs-mirror.azureedge.net"
+		]
+		
+		protocol {
+			port = "443"
+			type = "Https"
+		}
+	}
+}
+
+
+
+
+2026-01-15T10:41:47.4538811Z [1m  # azurerm_firewall_network_rule_collection.allow_aks_powerbi["data"][0m will be updated in-place[0m[0m
+2026-01-15T10:41:47.4539521Z [0m  [33m~[0m[0m resource "azurerm_firewall_network_rule_collection" "allow_aks_powerbi" {
+2026-01-15T10:41:47.4543603Z         [1m[0mid[0m[0m                  = "/subscriptions/63b7d481-6d18-4a56-bbec-0d3411477a0c/resourceGroups/rg-net-dev2-eus2-01/providers/Microsoft.Network/azureFirewalls/frw-backhaul-dev2-eus2-01/networkRuleCollections/allow_aks_powerbi"
+2026-01-15T10:41:47.4544906Z         [1m[0mname[0m[0m                = "allow_aks_powerbi"
+2026-01-15T10:41:47.4546039Z         [90m# (4 unchanged attributes hidden)[0m[0m
+2026-01-15T10:41:47.4546258Z 
+2026-01-15T10:41:47.4546622Z       [33m~[0m [0mrule {
+2026-01-15T10:41:47.4547140Z           [33m~[0m [0m[1m[0mdestination_addresses[0m[0m = [
+2026-01-15T10:41:47.4547645Z               [31m-[0m [0m"20.41.4.104/31",
+2026-01-15T10:41:47.4548377Z               [31m-[0m [0m"20.41.4.108/30",
+2026-01-15T10:41:47.4548843Z               [31m-[0m [0m"20.41.4.208/28",
+2026-01-15T10:41:47.4550036Z               [31m-[0m [0m"20.41.4.224/27",
+2026-01-15T10:41:47.4550892Z               [31m-[0m [0m"20.41.5.0/25",
+2026-01-15T10:41:47.4551605Z               [31m-[0m [0m"20.98.192.168/30",
+2026-01-15T10:41:47.4552160Z               [31m-[0m [0m"20.98.192.192/27",
+2026-01-15T10:41:47.4552700Z               [31m-[0m [0m"20.98.193.128/26",
+2026-01-15T10:41:47.4553407Z               [31m-[0m [0m"20.98.193.192/29",
+2026-01-15T10:41:47.4553972Z               [31m-[0m [0m"20.98.199.116/31",
+2026-01-15T10:41:47.4554859Z               [31m-[0m [0m"20.119.156.32/27",
+2026-01-15T10:41:47.4555618Z               [31m-[0m [0m"20.119.157.64/28",
+2026-01-15T10:41:47.4556217Z               [31m-[0m [0m"74.249.120.64/26",
+2026-01-15T10:41:47.4556679Z               [31m-[0m [0m"104.208.203.176/28",
+2026-01-15T10:41:47.4557015Z               [31m-[0m [0m"135.232.93.144/28",
+2026-01-15T10:41:47.4557486Z               [31m-[0m [0m"145.132.126.160/27",
+2026-01-15T10:41:47.4557864Z               [31m-[0m [0m"172.175.125.0/26",
+2026-01-15T10:41:47.4558372Z               [31m-[0m [0m"172.176.2.192/26",
+2026-01-15T10:41:47.4558763Z             ]
+2026-01-15T10:41:47.4559283Z             [1m[0mname[0m[0m                  = "allow_mssql"
+2026-01-15T10:41:47.4560084Z           [33m~[0m [0m[1m[0msource_addresses[0m[0m      = [
+2026-01-15T10:41:47.4560738Z               [31m-[0m [0m"172.18.32.0/19",
+2026-01-15T10:41:47.4561304Z               [31m-[0m [0m"172.18.0.0/19",
+2026-01-15T10:41:47.4561867Z               [31m-[0m [0m"172.18.64.0/19",
+2026-01-15T10:41:47.4562437Z               [31m-[0m [0m"172.18.128.0/19",
+2026-01-15T10:41:47.4563003Z               [31m-[0m [0m"172.18.160.0/19",
+2026-01-15T10:41:47.4563555Z               [31m-[0m [0m"172.18.96.0/19",
+2026-01-15T10:41:47.4564132Z               [32m+[0m [0m"20.41.4.104/31",
+2026-01-15T10:41:47.4564689Z               [32m+[0m [0m"20.41.4.108/30",
+2026-01-15T10:41:47.4565250Z               [32m+[0m [0m"20.41.4.208/28",
+2026-01-15T10:41:47.4565820Z               [32m+[0m [0m"20.41.4.224/27",
+2026-01-15T10:41:47.4566379Z               [32m+[0m [0m"20.41.5.0/25",
+2026-01-15T10:41:47.4566934Z               [32m+[0m [0m"20.98.192.168/30",
+2026-01-15T10:41:47.4567523Z               [32m+[0m [0m"20.98.192.192/27",
+2026-01-15T10:41:47.4568079Z               [32m+[0m [0m"20.98.193.128/26",
+2026-01-15T10:41:47.4568935Z               [32m+[0m [0m"20.98.193.192/29",
+2026-01-15T10:41:47.4569491Z               [32m+[0m [0m"20.98.199.116/31",
+2026-01-15T10:41:47.4570204Z               [32m+[0m [0m"20.119.156.32/27",
+2026-01-15T10:41:47.4570784Z               [32m+[0m [0m"20.119.157.64/28",
+2026-01-15T10:41:47.4571358Z               [32m+[0m [0m"74.249.120.64/26",
+2026-01-15T10:41:47.4571944Z               [32m+[0m [0m"104.208.203.176/28",
+2026-01-15T10:41:47.4572574Z               [32m+[0m [0m"135.232.93.144/28",
+2026-01-15T10:41:47.4573175Z               [32m+[0m [0m"145.132.126.160/27",
+2026-01-15T10:41:47.4573768Z               [32m+[0m [0m"172.175.125.0/26",
+2026-01-15T10:41:47.4574322Z               [32m+[0m [0m"172.176.2.192/26",
+2026-01-15T10:41:47.4574749Z             ]
+2026-01-15T10:41:47.4575317Z             [90m# (5 unchanged attributes hidden)[0m[0m
+2026-01-15T10:41:47.4575737Z         }
+2026-01-15T10:41:47.4576093Z     }
+2026-01-15T10:41:47.4576242Z 
+2026-01-15T10:41:47.4576907Z [1m  # azurerm_firewall_network_rule_collection.allow_fabric_inbound_to_dev2[0][0m will be created[0m[0m
+2026-01-15T10:41:47.4578740Z [0m  [32m+[0m[0m resource "azurerm_firewall_network_rule_collection" "allow_fabric_inbound_to_dev2" {
+2026-01-15T10:41:47.4579538Z       [32m+[0m [0m[1m[0maction[0m[0m              = "Allow"
+2026-01-15T10:41:47.4583024Z       [32m+[0m [0m[1m[0mazure_firewall_name[0m[0m = "frw-backhaul-dev2-eus2-01"
+2026-01-15T10:41:47.4583758Z       [32m+[0m [0m[1m[0mid[0m[0m                  = (known after apply)
+2026-01-15T10:41:47.4584414Z       [32m+[0m [0m[1m[0mname[0m[0m                = "allow_fabric_inbound_dev2"
+2026-01-15T10:41:47.4585045Z       [32m+[0m [0m[1m[0mpriority[0m[0m            = 10005
+2026-01-15T10:41:47.4585776Z       [32m+[0m [0m[1m[0mresource_group_name[0m[0m = "rg-net-dev2-eus2-01"
+2026-01-15T10:41:47.4586409Z 
+2026-01-15T10:41:47.4587224Z       [32m+[0m [0mrule {
+2026-01-15T10:41:47.4588137Z           [32m+[0m [0m[1m[0mdestination_addresses[0m[0m = [
+2026-01-15T10:41:47.4589280Z               [32m+[0m [0m"20.75.16.191",
+2026-01-15T10:41:47.4589691Z             ]
+2026-01-15T10:41:47.4590349Z           [32m+[0m [0m[1m[0mdestination_ports[0m[0m     = [
+2026-01-15T10:41:47.4590859Z               [32m+[0m [0m"80",
+2026-01-15T10:41:47.4591347Z               [32m+[0m [0m"443",
+2026-01-15T10:41:47.4591694Z             ]
+2026-01-15T10:41:47.4592415Z           [32m+[0m [0m[1m[0mname[0m[0m                  = "allow_fabric_inbound_dev2"
+2026-01-15T10:41:47.4593112Z           [32m+[0m [0m[1m[0mprotocols[0m[0m             = [
+2026-01-15T10:41:47.4593626Z               [32m+[0m [0m"TCP",
+2026-01-15T10:41:47.4593889Z             ]
+2026-01-15T10:41:47.4594587Z           [32m+[0m [0m[1m[0msource_addresses[0m[0m      = [
+2026-01-15T10:41:47.4595215Z               [32m+[0m [0m"20.41.4.104/31",
+2026-01-15T10:41:47.4595834Z               [32m+[0m [0m"20.41.4.108/30",
+2026-01-15T10:41:47.4596438Z               [32m+[0m [0m"20.41.4.208/28",
+2026-01-15T10:41:47.4596930Z               [32m+[0m [0m"20.41.4.224/27",
+2026-01-15T10:41:47.4597710Z               [32m+[0m [0m"20.41.5.0/25",
+2026-01-15T10:41:47.4598214Z               [32m+[0m [0m"20.98.192.168/30",
+2026-01-15T10:41:47.4598766Z               [32m+[0m [0m"20.98.192.192/27",
+2026-01-15T10:41:47.4599332Z               [32m+[0m [0m"20.98.193.128/26",
+2026-01-15T10:41:47.4600492Z               [32m+[0m [0m"20.98.193.192/29",
+2026-01-15T10:41:47.4601097Z               [32m+[0m [0m"20.98.199.116/31",
+2026-01-15T10:41:47.4601667Z               [32m+[0m [0m"20.119.156.32/27",
+2026-01-15T10:41:47.4602445Z               [32m+[0m [0m"20.119.157.64/28",
+2026-01-15T10:41:47.4603153Z               [32m+[0m [0m"74.249.120.64/26",
+2026-01-15T10:41:47.4603847Z               [32m+[0m [0m"104.208.203.176/28",
+2026-01-15T10:41:47.4604585Z               [32m+[0m [0m"135.232.93.144/28",
+2026-01-15T10:41:47.4605489Z               [32m+[0m [0m"145.132.126.160/27",
+2026-01-15T10:41:47.4605832Z             ]
+2026-01-15T10:41:47.4606127Z         }
+2026-01-15T10:41:47.4606451Z     }
+2026-01-15T10:41:47.4606565Z 
+2026-01-15T10:41:47.4607115Z [0m[1mPlan:[0m 1 to add, 1 to change, 0 to destroy.[0m
+2026-01-15T10:41:47.4607419Z 
